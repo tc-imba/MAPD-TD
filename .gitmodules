@@ -1,0 +1,3 @@
+[submodule "MAPF-benchmark"]
+	path = MAPF-benchmark
+	url = git@github.com:tc-imba/MAPF-benchmark.git
