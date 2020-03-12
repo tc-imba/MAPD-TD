@@ -16,14 +16,14 @@ void Map::parseHeader(const std::string &line, const std::string &key, T &value)
     iss.str(line);
     iss >> temp >> value;
     if (temp != key) {
-        throw std::exception("map key error");
+        throw std::runtime_error("map key error");
     }
 }
 
 Map::Map(const std::string &filename) {
     std::ifstream fin(filename);
     if (!fin.is_open()) {
-        throw std::exception("map file not found");
+        throw std::runtime_error("map file not found");
     }
     std::string line;
 
@@ -31,31 +31,31 @@ Map::Map(const std::string &filename) {
     std::getline(fin, line);
     parseHeader(line, "type", this->type);
     if (this->type != "octile") {
-        throw std::exception("map type error");
+        throw std::runtime_error("map type error");
     }
 
     // Get map height
     std::getline(fin, line);
     parseHeader(line, "height", this->height);
     if (this->height == 0) {
-        throw std::exception("map height error");
+        throw std::runtime_error("map height error");
     }
     std::getline(fin, line);
     parseHeader(line, "width", this->width);
     if (this->width == 0) {
-        throw std::exception("map width error");
+        throw std::runtime_error("map width error");
     }
 
     // Get map
     std::getline(fin, line);
     if (line != "map") {
-        throw std::exception("map format error");
+        throw std::runtime_error("map format error");
     }
     this->map.resize(this->height);
     for (size_t i = 0; i < this->height; i++) {
         this->map[i].resize(this->width, '.');
         if (!std::getline(fin, line) || line.length() < this->width) {
-            throw std::exception("map format error");
+            throw std::runtime_error("map format error");
         }
         for (size_t j = 0; j < this->width; j++) {
             this->map[i][j] = line[j];

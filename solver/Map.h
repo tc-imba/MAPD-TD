@@ -22,9 +22,9 @@ public:
 
     auto getHeight() const { return this->height; };
 
-    auto getWidth()const { return this->width; };
+    auto getWidth() const { return this->width; };
 
-    const std::vector<char> & operator[](size_t index) const;
+    const std::vector<char> &operator[](size_t index) const;
 };
 
 

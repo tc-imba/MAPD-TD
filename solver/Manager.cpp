@@ -24,7 +24,7 @@ void Manager::loadScenarioFile(const std::string &filename) {
     auto filePath = dataPath + "/" + filename;
     std::ifstream fin(filePath);
     if (!fin.is_open()) {
-        throw std::exception("scenario file not found");
+        throw std::runtime_error("scenario file not found");
     }
     std::string line, temp, version;
     std::istringstream iss;
@@ -33,7 +33,7 @@ void Manager::loadScenarioFile(const std::string &filename) {
     iss.str(line);
     iss >> temp >> version;
     if (temp != "version") {
-        throw std::exception("scenario version error");
+        throw std::runtime_error("scenario version error");
     }
 
     while (std::getline(fin, line)) {
@@ -48,7 +48,7 @@ void Manager::loadScenarioFile(const std::string &filename) {
             >> start.first >> start.second >> end.first >> end.second >> optimal;
         auto map = this->getMap(mapName);
         if (map->getHeight() != height || map->getWidth() != width) {
-            throw std::exception("scenario map size error");
+            throw std::runtime_error("scenario map size error");
         }
         auto scenario = std::make_unique<Scenario>(bucket, map, start, end, optimal);
         this->scenarios.emplace_back(std::move(scenario));

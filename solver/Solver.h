@@ -12,25 +12,14 @@
 #include <array>
 #include <map>
 #include <unordered_map>
+#include <memory>
 
 class Solver {
-private:
+public:
     enum class Direction {
         UP, RIGHT, DOWN, LEFT, NONE
     };
     const Direction directions[4] = {Direction::UP, Direction::RIGHT, Direction::DOWN, Direction::LEFT};
-
-
-/*    struct TimeSegment {
-        size_t startTime;
-        size_t duration;
-
-        bool operator()(const TimeSegment &a, const TimeSegment &b) {
-            return a.startTime < b.startTime;
-        }
-    };*/
-
-
 
     struct VirtualNode {
         std::pair<size_t, size_t> pos;  // v
@@ -80,6 +69,8 @@ private:
         }
     };
 
+private:
+
     std::unordered_map<OccupiedKey, std::unique_ptr<std::map<size_t, size_t> >, OccupiedKeyHash, OccupiedKeyEqual> occupiedMap;
 
 
@@ -92,7 +83,9 @@ private:
     std::vector<std::vector<Node>> nodes;
     const Map *map;
     const Scenario *scenario;
+    VirtualNode *successNode = nullptr;
 
+public:
     // isOccupied in [startTime, endTime)
     bool isOccupied(std::map<size_t, size_t> *occupied, size_t startTime, size_t endTime);
 
@@ -105,6 +98,7 @@ private:
     std::pair<size_t, size_t>
     findNotOccupiedInterval(std::map<size_t, size_t> *occupied, size_t startTime);
 
+private:
     std::pair<bool, std::pair<size_t, size_t>> getPosByDirection(std::pair<size_t, size_t> pos, Direction direction);
 
     size_t getDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
@@ -117,8 +111,6 @@ private:
 
     void addVirtualNodeToList(std::multimap<size_t, VirtualNode *> &list, VirtualNode *vNode, bool editNode);
 
-    void constructPath(VirtualNode *vNode);
-
     void initialize();
 
     void clean();
@@ -128,11 +120,28 @@ public:
 
     ~Solver();
 
-    void solve(const Scenario *scenario);
+    void initScenario(const Scenario *scenario);
+
+    bool success() { return successNode != nullptr; };
+
+    VirtualNode *step();
+
+    std::vector<VirtualNode *> constructPath(VirtualNode *vNode = nullptr);
 
     void addNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, size_t endTime);
 
     void addEdgeOccupied(std::pair<size_t, size_t> pos, Direction direction, size_t startTime, size_t endTime);
+
+    auto getMap() const { return this->map; };
+
+    auto getScenario() const { return this->scenario; };
+
+    auto &getNodes() const { return this->nodes; };
+
+    auto &getOpen() const { return this->open; };
+
+    auto &getClosed() const { return this->closed; };
+
 };
 
 

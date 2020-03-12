@@ -2,8 +2,10 @@
 // Created by liu on 2020/3/7.
 //
 
-#include <iostream>
 #include "Solver.h"
+
+#include <iostream>
+#include <limits>
 
 static const int DIRECTION_X[] = {-1, 0, 1, 0};
 static const int DIRECTION_Y[] = {0, 1, 0, -1};
@@ -92,11 +94,14 @@ void Solver::addVirtualNodeToList(std::multimap<size_t, VirtualNode *> &list,
     }
 }
 
-void Solver::constructPath(VirtualNode *vNode) {
+std::vector<Solver::VirtualNode *> Solver::constructPath(VirtualNode *vNode) {
+    if (!vNode) vNode = successNode;
+    std::vector<VirtualNode *> vector;
     while (vNode) {
-        std::cout << "(" << vNode->pos.first << "," << vNode->pos.second << ") " << vNode->leaveTime << std::endl;
+        vector.emplace_back(vNode);
         vNode = vNode->parent;
     }
+    return vector;
 }
 
 void Solver::initialize() {
@@ -140,6 +145,7 @@ void Solver::clean() {
     }
     open.clear();
     closed.clear();
+    successNode = nullptr;
 }
 
 
@@ -151,7 +157,7 @@ Solver::~Solver() {
     clean();
 }
 
-void Solver::solve(const Scenario *scenario) {
+void Solver::initScenario(const Scenario *scenario) {
     this->scenario = scenario;
 
     // Initialize the OPEN and CLOSED lists to be empty
@@ -162,91 +168,98 @@ void Solver::solve(const Scenario *scenario) {
     addVirtualNodeToList(open, startVNode, true);
 
     // while the OPEN list is not empty
-    while (!open.empty()) {
+//    while (!open.empty()) {
+//
+//
+//    }
+}
 
-        // Get a virtual node (v, h_v, v_p) off the OPEN list with the minimum h + g(v) value
-        auto it = open.begin();
-        auto vNode = removeVirtualNodeFromList(open, it, false);
-        auto &node = nodes[vNode->pos.first][vNode->pos.second];
+Solver::VirtualNode *Solver::step() {
+    if (open.empty()) return nullptr;
 
-        // Add (v, h_v, v_p) to the CLOSED list;
-        vNode->isOpen = false;
-        addVirtualNodeToList(closed, vNode, false);
+    // Get a virtual node (v, h_v, v_p) off the OPEN list with the minimum h + g(v) value
+    auto it = open.begin();
+    auto vNode = removeVirtualNodeFromList(open, it, false);
+    auto &node = nodes[vNode->pos.first][vNode->pos.second];
 
-        // if v is the goal location v''
-        if (vNode->pos == scenario->getEnd()) {
-            // we have found the solution and exit the algorithm
-            constructPath(vNode);
-            return;
-        }
+    // Add (v, h_v, v_p) to the CLOSED list;
+    vNode->isOpen = false;
+    addVirtualNodeToList(closed, vNode, false);
 
-        // if h_v + 1 not in O_v
-        if (!isOccupied(node.occupied, vNode->leaveTime + 1)) {
-            // Add (v, h_v+1, v_p) to the OPEN list;
-            auto newNode = createVirtualNode(vNode->pos, vNode->leaveTime + 1, vNode->parent, true);
-            addVirtualNodeToList(open, newNode, true);
-        }
+    // if v is the goal location v''
+    if (vNode->pos == scenario->getEnd()) {
+        // we have found the solution and exit the algorithm
+        successNode = vNode;
+//        constructPath(vNode);
+        return vNode;
+    }
 
-        // for each neighbouring node \bar{v} of v do
-        for (auto direction : directions) {
-            auto &edge = node.edges[(size_t) direction];
-            if (!edge.available) continue; // no node
-            auto p = getPosByDirection(vNode->pos, direction);
-            auto &neighborNode = nodes[p.second.first][p.second.second];
-            auto arrivalTime = vNode->leaveTime + 1; // h_v + L_e (L_e = 1 now)
+    // if h_v + 1 not in O_v
+    if (!isOccupied(node.occupied, vNode->leaveTime + 1)) {
+        // Add (v, h_v+1, v_p) to the OPEN list;
+        auto newNode = createVirtualNode(vNode->pos, vNode->leaveTime + 1, vNode->parent, true);
+        addVirtualNodeToList(open, newNode, true);
+    }
 
-            // if h_v + L_e not in O_{\bar{v}} and (h_v, h_v + L_e) /\ O_e = 0
-            auto arrivalInterval = findNotOccupiedInterval(neighborNode.occupied, arrivalTime);
-            if (arrivalInterval.first != arrivalInterval.second &&
-                !isOccupied(edge.occupied, vNode->leaveTime, arrivalTime)) {
+    // for each neighbouring node \bar{v} of v do
+    for (auto direction : directions) {
+        auto &edge = node.edges[(size_t) direction];
+        if (!edge.available) continue; // no node
+        auto p = getPosByDirection(vNode->pos, direction);
+        auto &neighborNode = nodes[p.second.first][p.second.second];
+        auto arrivalTime = vNode->leaveTime + 1; // h_v + L_e (L_e = 1 now)
 
-                // create the new node first to help search in the virtualNodes of a node
-                // use arrivalTime + 1 to prevent corner condition mistakes
-                auto newNode = createVirtualNode(p.second, arrivalTime + 1, vNode, true);
+        // if h_v + L_e not in O_{\bar{v}} and (h_v, h_v + L_e) /\ O_e = 0
+        auto arrivalInterval = findNotOccupiedInterval(neighborNode.occupied, arrivalTime);
+        if (arrivalInterval.first != arrivalInterval.second &&
+            !isOccupied(edge.occupied, vNode->leaveTime, arrivalTime)) {
 
-                // if there exists any virtual node in the OPEN or CLOSED list such that
-                // h' and h_v+L_e are in the same interval and h' <= h_v+L_e, flag will be false
-                auto flag = true;
-                for (auto it2 = neighborNode.virtualNodes.begin();
-                     it2 != neighborNode.virtualNodes.lower_bound(newNode); ++it2) {
-                    if ((*it2)->leaveTime <= arrivalTime && (*it2)->leaveTime >= arrivalInterval.first) {
-                        flag = false;
-                        break;
-                    }
+            // create the new node first to help search in the virtualNodes of a node
+            // use arrivalTime + 1 to prevent corner condition mistakes
+            auto newNode = createVirtualNode(p.second, arrivalTime + 1, vNode, true);
+
+            // if there exists any virtual node in the OPEN or CLOSED list such that
+            // h' and h_v+L_e are in the same interval and h' <= h_v+L_e, flag will be false
+            auto flag = true;
+            for (auto it2 = neighborNode.virtualNodes.begin();
+                 it2 != neighborNode.virtualNodes.lower_bound(newNode); ++it2) {
+                if ((*it2)->leaveTime <= arrivalTime && (*it2)->leaveTime >= arrivalInterval.first) {
+                    flag = false;
+                    break;
                 }
+            }
 
-                if (flag) {
-                    // set the leaveTime back to arrivalTime (-1)
-                    newNode->leaveTime = arrivalTime;
+            if (flag) {
+                // set the leaveTime back to arrivalTime (-1)
+                newNode->leaveTime = arrivalTime;
 
-                    // delete all virtual node in the OPEN list such that h′ and
-                    // h' and h_v+L_e are in the same interval and h' > h_v+L_e
-                    for (auto it2 = neighborNode.virtualNodes.upper_bound(newNode);
-                         it2 != neighborNode.virtualNodes.end();) {
-                        if ((*it2)->isOpen && (*it2)->leaveTime > arrivalTime &&
-                            (*it2)->leaveTime < arrivalInterval.second) {
-                            auto range = open.equal_range((*it2)->estimateTime);
-                            for (auto it3 = range.first; it3 != range.second; ++it3) {
-                                if (it3->second == *it2) {
-                                    open.erase(it3);
-                                    break;
-                                }
+                // delete all virtual node in the OPEN list such that h′ and
+                // h' and h_v+L_e are in the same interval and h' > h_v+L_e
+                for (auto it2 = neighborNode.virtualNodes.upper_bound(newNode);
+                     it2 != neighborNode.virtualNodes.end();) {
+                    if ((*it2)->isOpen && (*it2)->leaveTime > arrivalTime &&
+                        (*it2)->leaveTime < arrivalInterval.second) {
+                        auto range = open.equal_range((*it2)->estimateTime);
+                        for (auto it3 = range.first; it3 != range.second; ++it3) {
+                            if (it3->second == *it2) {
+                                open.erase(it3);
+                                break;
                             }
-                            auto deleteVNode = *it2;
-                            it2 = neighborNode.virtualNodes.erase(it2);
-                            delete deleteVNode;
-                        } else {
-                            ++it2;
                         }
+                        auto deleteVNode = *it2;
+                        it2 = neighborNode.virtualNodes.erase(it2);
+                        delete deleteVNode;
+                    } else {
+                        ++it2;
                     }
-                    addVirtualNodeToList(open, newNode, true);
-                } else {
-                    delete newNode;
                 }
+                addVirtualNodeToList(open, newNode, true);
+            } else {
+                delete newNode;
             }
         }
     }
-    std::cout << "failed" << std::endl;
+    return vNode;
 }
 
 void Solver::addNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, size_t endTime) {
@@ -255,6 +268,14 @@ void Solver::addNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, si
 
 void
 Solver::addEdgeOccupied(std::pair<size_t, size_t> pos, Solver::Direction direction, size_t startTime, size_t endTime) {
+    if (direction == Direction::LEFT) {
+        pos = getPosByDirection(pos, direction).second;
+        direction = Direction::RIGHT;
+    } else if (direction == Direction::UP) {
+        pos = getPosByDirection(pos, direction).second;
+        direction = Direction::DOWN;
+    }
+
     OccupiedKey key = {pos, direction};
     auto it = occupiedMap.find(key);
     if (it == occupiedMap.end()) {
