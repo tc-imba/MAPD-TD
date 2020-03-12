@@ -13,6 +13,7 @@
 class Node : public QGraphicsItem {
 private:
     GraphWidget *graph;
+    bool blocked = false;
     int radius;
     std::pair<size_t, size_t> pos;
     QVector<Edge *> edges;
@@ -23,13 +24,15 @@ private:
     bool chosen = false;
 
 public:
-    Node(GraphWidget *graphWidget, std::pair<size_t, size_t> pos, int radius = 15);
+    Node(GraphWidget *graphWidget, std::pair<size_t, size_t> pos, bool blocked = false, int radius = 15);
 
     void addEdge(Edge *edge, int direction);
 
     Edge *getEdge(int direction) { return edges[direction]; };
 
     auto getPos() { return this->pos; };
+
+    auto isBlocked() { return blocked; };
 
     void setOnPath(bool flag);
 

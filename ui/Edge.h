@@ -12,6 +12,7 @@
 class Edge : public QGraphicsItem {
 private:
     Node *source, *dest;
+    bool blocked;
     int direction, nodeRadius;
     QPointF sourcePoint, destPoint;
 

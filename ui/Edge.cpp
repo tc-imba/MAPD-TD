@@ -8,7 +8,7 @@
 
 void Edge::adjust() {
     QLineF line(mapFromItem(source, 0, 0), mapFromItem(dest, 0, 0));
-    int connectPath = onPath ? 0 : 1;
+    int connectPath = (onPath || blocked) ? 0 : 1;
     auto offset = connectPath * (nodeRadius + 1);
     if (direction % 2 == 1) {
         sourcePoint = line.p1() + QPointF(offset, 0);
@@ -25,6 +25,7 @@ Edge::Edge(Node *sourceNode, Node *destNode, int direction, int nodeRadius)
     if (!source || !dest)
         return;
 
+    blocked = source->isBlocked() || dest->isBlocked();
     source->addEdge(this, direction);
     dest->addEdge(this, (direction + 2) % 4);
     adjust();
@@ -42,6 +43,16 @@ QRectF Edge::boundingRect() const {
 void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {
     if (!source || !dest)
         return;
+
+    if (source->isBlocked() && dest->isBlocked()) {
+        QLineF line(sourcePoint, destPoint);
+        painter->setPen(QPen(Qt::lightGray, nodeRadius + 1));
+        painter->drawLine(line);
+        return;
+    }
+    if (blocked) {
+        return;
+    }
 
     QLineF line(sourcePoint, destPoint);
     if (chosen) {

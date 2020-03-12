@@ -15,11 +15,11 @@ int main(int argc, char **argv) {
 
     auto widget = new GraphWidget;
 
-    Manager manager("test-benchmark");
-    manager.loadScenarioFile("test/test.scen");
-
-//    Manager manager("MAPF-benchmark");
-//    manager.loadScenarioFile("scen-even/room-32-32-4-even-1.scen");
+//    Manager manager("test-benchmark");
+//    manager.loadScenarioFile("test/test.scen");
+//
+    Manager manager("MAPF-benchmark");
+    manager.loadScenarioFile("scen-even/room-32-32-4-even-1.scen");
 
     auto scenario = manager.getScenario();
     Solver solver(scenario->getMap());

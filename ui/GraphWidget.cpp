@@ -22,7 +22,7 @@ GraphWidget::GraphWidget(QWidget *parent) : QGraphicsView(parent) {
     setViewportUpdateMode(BoundingRectViewportUpdate);
     setRenderHint(QPainter::Antialiasing);
     setTransformationAnchor(AnchorUnderMouse);
-    scale(qreal(0.8), qreal(0.8));
+    scale(qreal(0.5), qreal(0.5));
     setMinimumSize(800, 800);
     setWindowTitle(tr("MAPF"));
 
@@ -86,7 +86,7 @@ void GraphWidget::setSolver(Solver *solver) {
     for (int i = 0; i < height; i++) {
         nodes[i].resize(width);
         for (int j = 0; j < width; j++) {
-            auto node = new Node(this, {i, j});
+            auto node = new Node(this, {i, j}, (*map)[i][j] != '.');
             scene->addItem(node);
             auto x = startX + nodeSize * j;
             auto y = startY + nodeSize * i;
@@ -109,22 +109,24 @@ void GraphWidget::setSolver(Solver *solver) {
         }
     }
 
+    startX += nodeSize * width;
+    startY += nodeSize * height / 2;
     occupiedListWidgetProxy->setVisible(true);
-    occupiedListWidgetProxy->setPos(startX + nodeSize * height, startY + 100);
-    occupiedListLabelProxy->setPos(startX + nodeSize * height, startY + 70);
+    occupiedListWidgetProxy->setPos(startX, startY + 100);
+    occupiedListLabelProxy->setPos(startX, startY + 70);
 
     openListWidgetProxy->setVisible(true);
-    openListWidgetProxy->setPos(startX + nodeSize * height + 180, startY + 100);
-    openListLabelProxy->setPos(startX + nodeSize * height + 180, startY + 70);
+    openListWidgetProxy->setPos(startX + 180, startY + 100);
+    openListLabelProxy->setPos(startX + 180, startY + 70);
 
     closedListWidgetProxy->setVisible(true);
-    closedListWidgetProxy->setPos(startX + nodeSize * height + 180, startY + 350);
-    closedListLabelProxy->setPos(startX + nodeSize * height + 180, startY + 320);
+    closedListWidgetProxy->setPos(startX + 180, startY + 350);
+    closedListLabelProxy->setPos(startX + 180, startY + 320);
 
     stepButtonProxy->setVisible(true);
-    stepButtonProxy->setPos(startX + nodeSize * height, startY);
+    stepButtonProxy->setPos(startX, startY);
 
-    labelProxy->setPos(startX + nodeSize * height, startY - 150);
+    labelProxy->setPos(startX, startY - 150);
     setTimeStamp(0);
     updateLabel();
     updateLists();

@@ -5,8 +5,8 @@
 #include <iostream>
 #include "Node.h"
 
-Node::Node(GraphWidget *graphWidget, std::pair<size_t, size_t> pos, int radius)
-        : graph(graphWidget), pos(std::move(pos)), radius(radius) {
+Node::Node(GraphWidget *graphWidget, std::pair<size_t, size_t> pos, bool blocked, int radius)
+        : graph(graphWidget), pos(std::move(pos)), blocked(blocked), radius(radius) {
     edges.resize(4);
     for (int i = 0; i < 4; i++) edges[i] = nullptr;
 }
@@ -37,7 +37,13 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
 //    std::cerr << "Paint (" << pos.first << ", " << pos.second << ")" << std::endl;
 
-
+//    if (blocked) return;
+    if (blocked) {
+        painter->setPen(QPen(Qt::lightGray, 0));
+        painter->setBrush(QBrush(Qt::lightGray));
+        painter->drawRect(-radius / 2, -radius / 2, radius, radius);
+        return;
+    }
 
     if (chosen) {
         painter->setPen(QPen(Qt::green, 3));
@@ -52,6 +58,7 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     }
 
     painter->drawEllipse(-radius, -radius, radius * 2, radius * 2);
+
 
     if (onPath) {
         painter->setPen(QPen(Qt::blue, 3));
