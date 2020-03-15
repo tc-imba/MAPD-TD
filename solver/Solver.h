@@ -6,6 +6,7 @@
 #define MAPF_SOLVER_H
 
 #include "Scenario.h"
+#include "Constraints.h"
 
 #include <queue>
 #include <set>
@@ -16,10 +17,6 @@
 
 class Solver {
 public:
-    enum class Direction {
-        UP, RIGHT, DOWN, LEFT, NONE
-    };
-    const Direction directions[4] = {Direction::UP, Direction::RIGHT, Direction::DOWN, Direction::LEFT};
 
     struct VirtualNode {
         std::pair<size_t, size_t> pos;  // v
@@ -50,9 +47,9 @@ public:
         std::array<Edge, 4> edges;
     };
 
-    struct OccupiedKey {
+/*    struct OccupiedKey {
         std::pair<size_t, size_t> pos;
-        Direction direction;
+        Map::Direction direction;
     };
 
     struct OccupiedKeyHash {
@@ -67,12 +64,13 @@ public:
         constexpr bool operator()(const OccupiedKey &a, const OccupiedKey &b) const {
             return a.pos == b.pos && a.direction == b.direction;
         }
-    };
+    };*/
 
 private:
 
-    std::unordered_map<OccupiedKey, std::unique_ptr<std::map<size_t, size_t> >, OccupiedKeyHash, OccupiedKeyEqual> occupiedMap;
+//    std::unordered_map<OccupiedKey, std::unique_ptr<std::map<size_t, size_t> >, OccupiedKeyHash, OccupiedKeyEqual> occupiedMap;
 
+    Constraints constraints;
 
     // Use a multimap instead of priority_queue to support node replace
     // key: estimateTime (ascent)
@@ -99,7 +97,6 @@ public:
     findNotOccupiedInterval(std::map<size_t, size_t> *occupied, size_t startTime);
 
 private:
-    std::pair<bool, std::pair<size_t, size_t>> getPosByDirection(std::pair<size_t, size_t> pos, Direction direction);
 
     size_t getDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
 
@@ -128,9 +125,9 @@ public:
 
     std::vector<VirtualNode *> constructPath(VirtualNode *vNode = nullptr);
 
-    void addNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, size_t endTime);
+//    void addNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, size_t endTime);
 
-    void addEdgeOccupied(std::pair<size_t, size_t> pos, Direction direction, size_t startTime, size_t endTime);
+//    void addEdgeOccupied(std::pair<size_t, size_t> pos, Direction direction, size_t startTime, size_t endTime);
 
     auto getMap() const { return this->map; };
 
@@ -141,6 +138,8 @@ public:
     auto &getOpen() const { return this->open; };
 
     auto &getClosed() const { return this->closed; };
+
+    auto &getConstraints() { return this->constraints; };
 
 };
 

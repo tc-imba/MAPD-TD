@@ -8,6 +8,7 @@ add_executable(
         solver/main.cpp solver/Map.cpp solver/Map.h
         solver/Scenario.cpp solver/Scenario.h solver/Manager.cpp
         solver/Manager.h solver/Solver.cpp solver/Solver.h
+        solver/Constraints.cpp solver/Constraints.h
 )
 
 set(CMAKE_AUTOMOC ON)
@@ -25,7 +26,9 @@ add_executable(MAPF-ui
         ui/main.cpp ui/GraphWidget.cpp ui/GraphWidget.h ui/Node.cpp ui/Node.h
         solver/Map.cpp solver/Map.h solver/Scenario.cpp solver/Scenario.h
         solver/Manager.cpp solver/Manager.h solver/Solver.cpp solver/Solver.h
+        solver/Constraints.cpp solver/Constraints.h
         ui/Edge.cpp ui/Edge.h)
 target_link_libraries(MAPF-ui Qt5::Widgets)
 
+add_executable(MAPF-generate generate/main.cpp)
 

@@ -16,7 +16,7 @@ int main() {
 //    solver.addNodeOccupied({0,1},0, 3);
 //    solver.addNodeOccupied({0,2},4, 5);
 
-    solver.addEdgeOccupied({0, 1}, Solver::Direction::RIGHT, 0, 3);
+    solver.getConstraints().addEdgeOccupied({0, 1}, Map::Direction::RIGHT, 0, 3);
 
     solver.initScenario(scenario);
     while (!solver.success() && solver.step()) {}

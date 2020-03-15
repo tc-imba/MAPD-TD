@@ -7,8 +7,7 @@
 #include <iostream>
 #include <limits>
 
-static const int DIRECTION_X[] = {-1, 0, 1, 0};
-static const int DIRECTION_Y[] = {0, 1, 0, -1};
+
 
 bool Solver::isOccupied(std::map<size_t, size_t> *occupied, size_t startTime, size_t endTime) {
     if (!occupied) return false;
@@ -45,16 +44,6 @@ Solver::findNotOccupiedInterval(std::map<size_t, size_t> *occupied, size_t start
 
 std::pair<size_t, size_t> Solver::findNotOccupiedInterval(std::map<size_t, size_t> *occupied, size_t startTime) {
     return findNotOccupiedInterval(occupied, startTime, startTime + 1);
-}
-
-
-std::pair<bool, std::pair<size_t, size_t>>
-Solver::getPosByDirection(std::pair<size_t, size_t> pos, Solver::Direction direction) {
-    bool flag = true;
-    pos.first += DIRECTION_X[(size_t) direction];
-    pos.second += DIRECTION_Y[(size_t) direction];
-    if (pos.first >= map->getHeight() || pos.second >= map->getWidth()) flag = false;
-    return std::make_pair(flag, pos);
 }
 
 size_t Solver::getDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end) {
@@ -110,22 +99,22 @@ void Solver::initialize() {
     for (size_t i = 0; i < map->getHeight(); i++) {
         nodes[i].resize(map->getWidth());
         for (size_t j = 0; j < map->getWidth(); j++) {
-            for (auto direction : directions) {
-                auto p = getPosByDirection({i, j}, direction);
+            for (auto direction : Map::directions) {
+                auto p = map->getPosByDirection({i, j}, direction);
                 if (!p.first || (*map)[p.second.first][p.second.second] != '.') {
                     nodes[i][j].edges[(size_t) direction].available = false;
                 }
             }
         }
     }
-    for (const auto &item: occupiedMap) {
-        if (item.first.direction == Direction::NONE) {
+    for (const auto &item: constraints.getOccupiedMap()) {
+        if (item.first.direction == Map::Direction::NONE) {
             nodes[item.first.pos.first][item.first.pos.second].occupied = item.second.get();
         } else {
             auto &node1 = nodes[item.first.pos.first][item.first.pos.second];
             auto dir1 = (size_t) item.first.direction;
             node1.edges[dir1].occupied = item.second.get();
-            auto p = getPosByDirection(item.first.pos, item.first.direction);
+            auto p = map->getPosByDirection(item.first.pos, item.first.direction);
             if (p.first) {
                 auto &node2 = nodes[p.second.first][p.second.second];
                 auto dir2 = (dir1 + 2) % 4;
@@ -149,7 +138,7 @@ void Solver::clean() {
 }
 
 
-Solver::Solver(const Map *map) : map(map) {
+Solver::Solver(const Map *map) : map(map), constraints(map) {
 
 }
 
@@ -202,10 +191,10 @@ Solver::VirtualNode *Solver::step() {
     }
 
     // for each neighbouring node \bar{v} of v do
-    for (auto direction : directions) {
+    for (auto direction : Map::directions) {
         auto &edge = node.edges[(size_t) direction];
         if (!edge.available) continue; // no node
-        auto p = getPosByDirection(vNode->pos, direction);
+        auto p = map->getPosByDirection(vNode->pos, direction);
         auto &neighborNode = nodes[p.second.first][p.second.second];
         auto arrivalTime = vNode->leaveTime + 1; // h_v + L_e (L_e = 1 now)
 
@@ -262,12 +251,13 @@ Solver::VirtualNode *Solver::step() {
     return vNode;
 }
 
+/*
 void Solver::addNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, size_t endTime) {
     addEdgeOccupied(pos, Direction::NONE, startTime, endTime);
 }
 
 void
-Solver::addEdgeOccupied(std::pair<size_t, size_t> pos, Solver::Direction direction, size_t startTime, size_t endTime) {
+Solver::addEdgeOccupied(std::pair<size_t, size_t> pos, Direction direction, size_t startTime, size_t endTime) {
     if (direction == Direction::LEFT) {
         pos = getPosByDirection(pos, direction).second;
         direction = Direction::RIGHT;
@@ -299,6 +289,7 @@ Solver::addEdgeOccupied(std::pair<size_t, size_t> pos, Solver::Direction directi
 }
 
 
+*/
 
 
 

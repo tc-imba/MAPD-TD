@@ -15,18 +15,18 @@ int main(int argc, char **argv) {
 
     auto widget = new GraphWidget;
 
-//    Manager manager("test-benchmark");
-//    manager.loadScenarioFile("test/test.scen");
+    Manager manager("test-benchmark");
+    manager.loadScenarioFile("test/test.scen");
 //
-    Manager manager("MAPF-benchmark");
-    manager.loadScenarioFile("scen-even/room-32-32-4-even-1.scen");
+//    Manager manager("MAPF-benchmark");
+//    manager.loadScenarioFile("scen-even/room-32-32-4-even-1.scen");
 
     auto scenario = manager.getScenario();
     Solver solver(scenario->getMap());
 
-    solver.addNodeOccupied({0, 1}, 0, 3);
-    solver.addNodeOccupied({0, 2}, 4, 5);
-    solver.addEdgeOccupied({0, 0}, Solver::Direction::RIGHT, 0, 3);
+    solver.getConstraints().addNodeOccupied({0, 1}, 0, 3);
+    solver.getConstraints().addNodeOccupied({0, 2}, 4, 5);
+    solver.getConstraints().addEdgeOccupied({0, 0}, Map::Direction::RIGHT, 0, 3);
 
     solver.initScenario(scenario);
 

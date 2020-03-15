@@ -9,6 +9,15 @@
 #include <vector>
 
 class Map {
+public:
+    enum class Direction {
+        UP, RIGHT, DOWN, LEFT, NONE
+    };
+
+    static const Direction directions[4];
+    static const int DIRECTION_X[4];
+    static const int DIRECTION_Y[4];
+
 private:
     size_t height = 0, width = 0;
     std::string type;
@@ -25,6 +34,8 @@ public:
     auto getWidth() const { return this->width; };
 
     const std::vector<char> &operator[](size_t index) const;
+
+    std::pair<bool, std::pair<size_t, size_t>> getPosByDirection(std::pair<size_t, size_t> pos, Direction direction) const;
 };
 
 

@@ -22,6 +22,7 @@ private:
     bool latest = false;
     bool occupied = false;
     bool chosen = false;
+    
 
 public:
     Node(GraphWidget *graphWidget, std::pair<size_t, size_t> pos, bool blocked = false, int radius = 15);

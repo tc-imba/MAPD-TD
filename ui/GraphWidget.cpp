@@ -22,8 +22,8 @@ GraphWidget::GraphWidget(QWidget *parent) : QGraphicsView(parent) {
     setViewportUpdateMode(BoundingRectViewportUpdate);
     setRenderHint(QPainter::Antialiasing);
     setTransformationAnchor(AnchorUnderMouse);
-    scale(qreal(0.5), qreal(0.5));
-    setMinimumSize(800, 800);
+//    scale(qreal(0.5), qreal(0.5));
+    setMinimumSize(1000, 1000);
     setWindowTitle(tr("MAPF"));
 
     label = new QLabel();
@@ -112,21 +112,21 @@ void GraphWidget::setSolver(Solver *solver) {
     startX += nodeSize * width;
     startY += nodeSize * height / 2;
     occupiedListWidgetProxy->setVisible(true);
-    occupiedListWidgetProxy->setPos(startX, startY + 100);
-    occupiedListLabelProxy->setPos(startX, startY + 70);
+    occupiedListWidgetProxy->setPos(startX, startY - 200);
+    occupiedListLabelProxy->setPos(startX, startY - 230);
 
     openListWidgetProxy->setVisible(true);
-    openListWidgetProxy->setPos(startX + 180, startY + 100);
-    openListLabelProxy->setPos(startX + 180, startY + 70);
+    openListWidgetProxy->setPos(startX + 180, startY - 200);
+    openListLabelProxy->setPos(startX + 180, startY - 230);
 
     closedListWidgetProxy->setVisible(true);
-    closedListWidgetProxy->setPos(startX + 180, startY + 350);
-    closedListLabelProxy->setPos(startX + 180, startY + 320);
+    closedListWidgetProxy->setPos(startX + 180, startY + 50);
+    closedListLabelProxy->setPos(startX + 180, startY + 20);
 
     stepButtonProxy->setVisible(true);
-    stepButtonProxy->setPos(startX, startY);
+    stepButtonProxy->setPos(startX, startY - 300);
 
-    labelProxy->setPos(startX, startY - 150);
+    labelProxy->setPos(startX, startY - 450);
     setTimeStamp(0);
     updateLabel();
     updateLists();

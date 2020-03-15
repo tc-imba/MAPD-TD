@@ -9,6 +9,12 @@
 #include <exception>
 #include <iostream>
 
+const Map::Direction Map::directions[4] = {Map::Direction::UP, Map::Direction::RIGHT,
+                                           Map::Direction::DOWN, Map::Direction::LEFT};
+
+const int Map::DIRECTION_X[4] = {-1, 0, 1, 0};
+const int Map::DIRECTION_Y[4] = {0, 1, 0, -1};
+
 template<typename T>
 void Map::parseHeader(const std::string &line, const std::string &key, T &value) {
     std::string temp;
@@ -69,3 +75,11 @@ const std::vector<char> &Map::operator[](size_t index) const {
     return this->map[index];
 }
 
+std::pair<bool, std::pair<size_t, size_t>>
+Map::getPosByDirection(std::pair<size_t, size_t> pos, Direction direction) const {
+    bool flag = true;
+    pos.first += DIRECTION_X[(size_t) direction];
+    pos.second += DIRECTION_Y[(size_t) direction];
+    if (pos.first >= height || pos.second >= width) flag = false;
+    return std::make_pair(flag, pos);
+}
