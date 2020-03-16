@@ -15,9 +15,15 @@ Manager::Manager(std::string dataPath) : dataPath(std::move(dataPath)) {
 Map *Manager::loadMapFile(const std::string &mapName) {
     auto filePath = dataPath + "/map/" + mapName;
     auto map = std::make_unique<Map>(filePath);
-    auto ptr = map.get();
+    auto mapPtr = map.get();
     this->maps.emplace(mapName, std::move(map));
-    return ptr;
+    filePath = dataPath + "/constraints/" + mapName;
+    if (mapPtr->loadConstraints(filePath)) {
+        std::cerr << "constraints loaded" << std::endl;
+    } else {
+        std::cerr << "no constraints" << std::endl;
+    }
+    return mapPtr;
 }
 
 void Manager::loadScenarioFile(const std::string &filename) {

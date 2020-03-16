@@ -22,11 +22,12 @@ int main(int argc, char **argv) {
 //    manager.loadScenarioFile("scen-even/room-32-32-4-even-1.scen");
 
     auto scenario = manager.getScenario();
+    auto map = scenario->getMap();
     Solver solver(scenario->getMap());
 
-    solver.getConstraints().addNodeOccupied({0, 1}, 0, 3);
-    solver.getConstraints().addNodeOccupied({0, 2}, 4, 5);
-    solver.getConstraints().addEdgeOccupied({0, 0}, Map::Direction::RIGHT, 0, 3);
+   map->addNodeOccupied({0, 1}, 0, 3);
+   map->addNodeOccupied({0, 2}, 4, 5);
+   map->addEdgeOccupied({0, 0}, Map::Direction::RIGHT, 0, 3);
 
     solver.initScenario(scenario);
 

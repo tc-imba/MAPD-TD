@@ -107,7 +107,7 @@ void Solver::initialize() {
             }
         }
     }
-    for (const auto &item: constraints.getOccupiedMap()) {
+    for (const auto &item: map->getOccupiedMap()) {
         if (item.first.direction == Map::Direction::NONE) {
             nodes[item.first.pos.first][item.first.pos.second].occupied = item.second.get();
         } else {
@@ -138,7 +138,7 @@ void Solver::clean() {
 }
 
 
-Solver::Solver(const Map *map) : map(map), constraints(map) {
+Solver::Solver(const Map *map) : map(map){
 
 }
 

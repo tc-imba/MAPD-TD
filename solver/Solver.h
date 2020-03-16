@@ -6,7 +6,6 @@
 #define MAPF_SOLVER_H
 
 #include "Scenario.h"
-#include "Constraints.h"
 
 #include <queue>
 #include <set>
@@ -47,31 +46,7 @@ public:
         std::array<Edge, 4> edges;
     };
 
-/*    struct OccupiedKey {
-        std::pair<size_t, size_t> pos;
-        Map::Direction direction;
-    };
-
-    struct OccupiedKeyHash {
-        size_t operator()(OccupiedKey const &occupiedKey) const noexcept {
-            auto hash = std::hash<std::size_t>{};
-            return hash(occupiedKey.pos.first) ^ (hash(occupiedKey.pos.second) << 1) ^
-                   (hash(size_t(occupiedKey.direction)) << 2);
-        }
-    };
-
-    struct OccupiedKeyEqual {
-        constexpr bool operator()(const OccupiedKey &a, const OccupiedKey &b) const {
-            return a.pos == b.pos && a.direction == b.direction;
-        }
-    };*/
-
 private:
-
-//    std::unordered_map<OccupiedKey, std::unique_ptr<std::map<size_t, size_t> >, OccupiedKeyHash, OccupiedKeyEqual> occupiedMap;
-
-    Constraints constraints;
-
     // Use a multimap instead of priority_queue to support node replace
     // key: estimateTime (ascent)
     // value: VirtualNode *
@@ -138,9 +113,6 @@ public:
     auto &getOpen() const { return this->open; };
 
     auto &getClosed() const { return this->closed; };
-
-    auto &getConstraints() { return this->constraints; };
-
 };
 
 

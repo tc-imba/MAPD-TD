@@ -71,11 +71,11 @@ int main() {
             auto x = xDistribution(gen);
             auto y = yDistribution(gen);
             auto length = lengthDistribution(gen);
-            size_t direction = 0;
+            int direction = -1;
             if (realDistribution(gen) < 0.3) {
                 direction = directionDistribution(gen);
             }
-            fout << x << "\t" << y << "\t" << direction << "\t" << t << "\t" << length << endl;
+            fout << x << "\t" << y << "\t" << direction << "\t" << t << "\t" << t+length << endl;
         }
     }
     fout.close();

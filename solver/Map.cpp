@@ -83,3 +83,60 @@ Map::getPosByDirection(std::pair<size_t, size_t> pos, Direction direction) const
     if (pos.first >= height || pos.second >= width) flag = false;
     return std::make_pair(flag, pos);
 }
+
+void Map::addNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, size_t endTime) {
+    addEdgeOccupied(pos, Map::Direction::NONE, startTime, endTime);
+}
+
+void Map::addEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime, size_t endTime) {
+    if (direction == Map::Direction::LEFT) {
+        pos = getPosByDirection(pos, direction).second;
+        direction = Map::Direction::RIGHT;
+    } else if (direction == Map::Direction::UP) {
+        pos = getPosByDirection(pos, direction).second;
+        direction = Map::Direction::DOWN;
+    }
+
+    OccupiedKey key = {pos, direction};
+    auto it = occupiedMap.find(key);
+    if (it == occupiedMap.end()) {
+        auto occupied = std::make_unique<std::map<size_t, size_t>>();
+        occupied->emplace(startTime, endTime - startTime);
+        occupiedMap.emplace_hint(it, key, std::move(occupied));
+    } else {
+        auto occupied = it->second.get();
+        auto it2 = occupied->upper_bound(startTime);
+        if (it2 != occupied->begin()) --it2;
+        while (it2 != occupied->end()) {
+            if (it2->first <= endTime) {
+                endTime = std::max(it2->second, endTime);
+                it2 = occupied->erase(it2);
+            } else if (startTime > it2->second) {
+                break;
+            }
+        }
+        occupied->emplace(startTime, endTime - startTime);
+    }
+}
+
+bool Map::loadConstraints(const std::string &filename) {
+    std::ifstream fin(filename);
+    if (!fin.is_open()) return false;
+    std::string line;
+    std::istringstream iss;
+    while (std::getline(fin, line)) {
+        if (line.empty()) continue;
+        iss.clear();
+        iss.str(line);
+        std::pair<size_t, size_t> pos;
+        int direction;
+        size_t startTime, endTime;
+        iss >> pos.first >> pos.second >> direction >> startTime >> endTime;
+        if (direction >= 0) {
+            addEdgeOccupied(pos, Direction(direction), startTime, endTime);
+        } else {
+            addNodeOccupied(pos, startTime, endTime);
+        }
+    }
+    return true;
+}
