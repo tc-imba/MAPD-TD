@@ -162,9 +162,33 @@ void GraphWidget::clearSelected() {
     selectedEdge = nullptr;
 }
 
-void GraphWidget::updateOccupiedList(std::map<size_t, size_t> *occupied) {
+void GraphWidget::updateOccupiedList(std::map<size_t, size_t> *occupied, bool all) {
     occupiedListWidget->clear();
-    if (occupied) {
+    if (all) {
+        for (const auto &it : solver->getMap()->getOccupiedMap()) {
+            QString header;
+            auto node = nodes[it.first.pos.first][it.first.pos.second];
+            if (it.first.direction == Map::Direction::NONE) {
+                if (node->isBlocked()) {
+                    continue;
+                }
+                header = node->toString();
+            } else {
+                auto edge = node->getEdge((int) it.first.direction);
+                if (edge == nullptr || edge->sourceNode()->isBlocked() || edge->destNode()->isBlocked()) {
+                    continue;
+                }
+                header = edge->toString();
+            }
+            for (const auto &p : *it.second) {
+                QString text = "[" + QString::number(p.first) + ", " + QString::number(p.first + p.second) + ")";
+                auto item = new QListWidgetItem(header + " " + text, occupiedListWidget);
+                if (p.first <= timestamp && p.second > timestamp) {
+                    item->setForeground(Qt::red);
+                }
+            }
+        }
+    } else if (occupied) {
         for (const auto &p : *occupied) {
             QString text = "[" + QString::number(p.first) + ", " + QString::number(p.first + p.second) + ")";
             auto item = new QListWidgetItem(text, occupiedListWidget);
@@ -244,7 +268,7 @@ void GraphWidget::updateLists() {
         openListLabel->setText("Global Open List");
         closedListLabel->setText("Global Closed List");
     } else {
-        updateOccupiedList(nullptr);
+        updateOccupiedList(nullptr, true);
         updateOpenClosedList(solver->getOpen(), solver->getClosed());
         occupiedListLabel->setText("");
         openListLabel->setText("Global Open List");

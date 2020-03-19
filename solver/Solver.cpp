@@ -8,7 +8,6 @@
 #include <limits>
 
 
-
 bool Solver::isOccupied(std::map<size_t, size_t> *occupied, size_t startTime, size_t endTime) {
     if (!occupied) return false;
     auto it = occupied->upper_bound(startTime);
@@ -33,13 +32,13 @@ Solver::findNotOccupiedInterval(std::map<size_t, size_t> *occupied, size_t start
         if (endTime <= it->first) {
             if (it == occupied->begin()) return {0, it->first};
             auto it2 = std::prev(it);
-            return {it2->second, it->first};
+            return {it->first + it2->second, it->first};
         }
         if (startTime < it->first + it->second) return {0, 0};
     }
     // startTime > last occupied interval
     --it;
-    return {it->second, std::numeric_limits<size_t>::max()};
+    return {it->first + it->second, std::numeric_limits<size_t>::max()};
 }
 
 std::pair<size_t, size_t> Solver::findNotOccupiedInterval(std::map<size_t, size_t> *occupied, size_t startTime) {
@@ -138,7 +137,7 @@ void Solver::clean() {
 }
 
 
-Solver::Solver(const Map *map) : map(map){
+Solver::Solver(const Map *map) : map(map) {
 
 }
 

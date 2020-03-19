@@ -59,7 +59,7 @@ private:
 
     void clearSelected();
 
-    void updateOccupiedList(std::map<size_t, size_t> *occupied);
+    void updateOccupiedList(std::map<size_t, size_t> *occupied, bool all = false);
 
     void addToOpenClosedList(const Solver::VirtualNode *vNode);
 
