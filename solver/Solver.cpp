@@ -14,7 +14,7 @@ bool Solver::isOccupied(std::map<size_t, size_t> *occupied, size_t startTime, si
     if (it != occupied->begin()) --it;
     for (; it != occupied->end(); ++it) {
         if (endTime <= it->first) return false;
-        if (startTime < it->first + it->second) return true;
+        if (startTime < it->second) return true;
     }
     return false;
 }
@@ -32,13 +32,13 @@ Solver::findNotOccupiedInterval(std::map<size_t, size_t> *occupied, size_t start
         if (endTime <= it->first) {
             if (it == occupied->begin()) return {0, it->first};
             auto it2 = std::prev(it);
-            return {it->first + it2->second, it->first};
+            return {it2->second, it->first};
         }
-        if (startTime < it->first + it->second) return {0, 0};
+        if (startTime < it->second) return {0, 0};
     }
     // startTime > last occupied interval
     --it;
-    return {it->first + it->second, std::numeric_limits<size_t>::max()};
+    return {it->second, std::numeric_limits<size_t>::max()};
 }
 
 std::pair<size_t, size_t> Solver::findNotOccupiedInterval(std::map<size_t, size_t> *occupied, size_t startTime) {
@@ -221,8 +221,9 @@ Solver::VirtualNode *Solver::step() {
                 // set the leaveTime back to arrivalTime (-1)
                 newNode->leaveTime = arrivalTime;
 
-                // delete all virtual node in the OPEN list such that h′ and
+                // delete all virtual node in the OPEN list such that
                 // h' and h_v+L_e are in the same interval and h' > h_v+L_e
+                size_t deleteCount = 0;
                 for (auto it2 = neighborNode.virtualNodes.upper_bound(newNode);
                      it2 != neighborNode.virtualNodes.end();) {
                     if ((*it2)->isOpen && (*it2)->leaveTime > arrivalTime &&
@@ -237,9 +238,13 @@ Solver::VirtualNode *Solver::step() {
                         auto deleteVNode = *it2;
                         it2 = neighborNode.virtualNodes.erase(it2);
                         delete deleteVNode;
+                        ++deleteCount;
                     } else {
                         ++it2;
                     }
+                }
+                if (deleteCount > 1) {
+                    std::cerr << "delete > 1" <<std::endl;
                 }
                 addVirtualNodeToList(open, newNode, true);
             } else {

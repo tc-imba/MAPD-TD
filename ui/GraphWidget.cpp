@@ -34,7 +34,7 @@ GraphWidget::GraphWidget(QWidget *parent) : QGraphicsView(parent) {
     label->setFont(font);
 
     occupiedListWidget = new QListWidget();
-    occupiedListWidget->setFixedWidth(150);
+    occupiedListWidget->setFixedWidth(200);
     occupiedListWidget->setFixedHeight(450);
     occupiedListWidgetProxy = scene->addWidget(occupiedListWidget);
     occupiedListWidgetProxy->setVisible(false);
@@ -42,7 +42,7 @@ GraphWidget::GraphWidget(QWidget *parent) : QGraphicsView(parent) {
     occupiedListLabel = new QLabel();
     occupiedListLabelProxy = scene->addWidget(occupiedListLabel);
     occupiedListLabel->setAttribute(Qt::WA_TranslucentBackground);
-    occupiedListLabel->setFixedWidth(150);
+    occupiedListLabel->setFixedWidth(200);
 
     openListWidget = new QListWidget();
     openListWidget->setFixedWidth(300);
@@ -116,12 +116,12 @@ void GraphWidget::setSolver(Solver *solver) {
     occupiedListLabelProxy->setPos(startX, startY - 230);
 
     openListWidgetProxy->setVisible(true);
-    openListWidgetProxy->setPos(startX + 180, startY - 200);
-    openListLabelProxy->setPos(startX + 180, startY - 230);
+    openListWidgetProxy->setPos(startX + 230, startY - 200);
+    openListLabelProxy->setPos(startX + 230, startY - 230);
 
     closedListWidgetProxy->setVisible(true);
-    closedListWidgetProxy->setPos(startX + 180, startY + 50);
-    closedListLabelProxy->setPos(startX + 180, startY + 20);
+    closedListWidgetProxy->setPos(startX + 230, startY + 50);
+    closedListLabelProxy->setPos(startX + 230, startY + 20);
 
     stepButtonProxy->setVisible(true);
     stepButtonProxy->setPos(startX, startY - 300);
@@ -181,7 +181,7 @@ void GraphWidget::updateOccupiedList(std::map<size_t, size_t> *occupied, bool al
                 header = edge->toString();
             }
             for (const auto &p : *it.second) {
-                QString text = "[" + QString::number(p.first) + ", " + QString::number(p.first + p.second) + ")";
+                QString text = "[" + QString::number(p.first) + ", " + QString::number(p.second) + ")";
                 auto item = new QListWidgetItem(header + " " + text, occupiedListWidget);
                 if (p.first <= timestamp && p.second > timestamp) {
                     item->setForeground(Qt::red);
@@ -190,7 +190,7 @@ void GraphWidget::updateOccupiedList(std::map<size_t, size_t> *occupied, bool al
         }
     } else if (occupied) {
         for (const auto &p : *occupied) {
-            QString text = "[" + QString::number(p.first) + ", " + QString::number(p.first + p.second) + ")";
+            QString text = "[" + QString::number(p.first) + ", " + QString::number(p.second) + ")";
             auto item = new QListWidgetItem(text, occupiedListWidget);
             if (p.first <= timestamp && p.second > timestamp) {
                 item->setForeground(Qt::red);
