@@ -8,6 +8,7 @@
 #include <sstream>
 #include <exception>
 #include <iostream>
+#include <algorithm>
 
 const Map::Direction Map::directions[4] = {Map::Direction::UP, Map::Direction::RIGHT,
                                            Map::Direction::DOWN, Map::Direction::LEFT};
@@ -142,4 +143,12 @@ bool Map::loadConstraints(const std::string &filename) {
         }
     }
     return true;
+}
+
+Map::Direction Map::getDirectionByPos(std::pair<size_t, size_t> pos1, std::pair<size_t, size_t> pos2) const {
+    if (pos1.first > pos2.first && pos1.second == pos2.second) return Direction::DOWN;
+    if (pos1.first < pos2.first && pos1.second == pos2.second) return Direction::UP;
+    if (pos1.first == pos2.first && pos1.second > pos2.second) return Direction::LEFT;
+    if (pos1.first == pos2.first && pos1.second < pos2.second) return Direction::RIGHT;
+    return Direction::NONE;
 }

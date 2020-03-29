@@ -26,7 +26,7 @@ public:
 
     void loadScenarioFile(const std::string &filename);
 
-    Scenario* getScenario();
+    Scenario* getScenario(size_t index = 0);
 };
 
 

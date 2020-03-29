@@ -69,8 +69,8 @@ Map *Manager::getMap(const std::string &mapName) {
     return this->loadMapFile(mapName);
 }
 
-Scenario *Manager::getScenario() {
-    return this->scenarios[0].get();
+Scenario *Manager::getScenario(size_t index) {
+    return this->scenarios[index].get();
 }
 
 

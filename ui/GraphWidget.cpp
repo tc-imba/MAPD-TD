@@ -22,7 +22,7 @@ GraphWidget::GraphWidget(QWidget *parent) : QGraphicsView(parent) {
     setViewportUpdateMode(BoundingRectViewportUpdate);
     setRenderHint(QPainter::Antialiasing);
     setTransformationAnchor(AnchorUnderMouse);
-//    scale(qreal(0.5), qreal(0.5));
+    scale(qreal(0.5), qreal(0.5));
     setMinimumSize(1000, 1000);
     setWindowTitle(tr("MAPF"));
 

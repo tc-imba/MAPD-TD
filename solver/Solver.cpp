@@ -148,6 +148,14 @@ Solver::~Solver() {
 void Solver::initScenario(const Scenario *scenario) {
     this->scenario = scenario;
 
+    // skip the algorithm if start or end point is blocked
+    auto start = scenario->getStart();
+    auto end = scenario->getEnd();
+    if ((*map)[start.first][start.second] != '.' || (*map)[end.first][end.second] != '.') {
+        clean();
+        return;
+    }
+
     // Initialize the OPEN and CLOSED lists to be empty
     initialize();
 

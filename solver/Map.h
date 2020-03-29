@@ -62,6 +62,8 @@ public:
 
     std::pair<bool, std::pair<size_t, size_t>> getPosByDirection(std::pair<size_t, size_t> pos, Direction direction) const;
 
+    Direction getDirectionByPos(std::pair<size_t, size_t> pos1, std::pair<size_t, size_t> pos2) const;
+
     void addNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, size_t endTime);
 
     void addEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime, size_t endTime);
