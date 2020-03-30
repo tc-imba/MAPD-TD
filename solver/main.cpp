@@ -1,6 +1,7 @@
 #include <iostream>
 #include <limits>
 #include <exception>
+#include <algorithm>
 
 #include "Manager.h"
 #include "Solver.h"
@@ -11,15 +12,19 @@ int main() {
 
     Manager manager("MAPF-benchmark");
     manager.loadScenarioFile("scen-even/room-32-32-4-even-1.scen");
+    manager.loadScenarioFile("scen-even/random-32-32-10-even-1.scen");
     bool addConstraints = true;
 
 
-    auto tempScenario = manager.getScenario(0);
-    auto map = tempScenario->getMap();
-    Solver solver(map);
+    size_t successCount = 0, failedCount = 0, TLECount = 0;
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 200; i++) {
         auto scenario = manager.getScenario(i);
+        if (!scenario) break;
+
+        auto map = scenario->getMap();
+        Solver solver(map);
+
         std::cout << "(" << scenario->getStart().first << "," << scenario->getStart().second << ") -> ("
                   << scenario->getEnd().first << "," << scenario->getEnd().second << ") ";
 
@@ -29,7 +34,14 @@ int main() {
             ++count;
         }
         if (solver.success()) {
+            ++successCount;
             auto vector = solver.constructPath();
+            std::cout << vector[0]->leaveTime << std::endl;
+            for (auto vNode:vector) {
+                std::cout << "(" << vNode->pos.first << "," << vNode->pos.second << ") " << vNode->leaveTime
+                          << std::endl;
+            }
+            std::reverse(vector.begin(), vector.end());
             if (addConstraints) {
                 map->addNodeOccupied(vector[0]->pos, 0, vector[0]->leaveTime + 1);
                 for (size_t j = 1; j < vector.size(); j++) {
@@ -44,16 +56,19 @@ int main() {
                                          vector[j - 1]->leaveTime + 1);
                 }
             }
-            std::cout << vector[0]->leaveTime << std::endl;
-            /*for (auto vNode:vector) {
-                std::cout << "(" << vNode->pos.first << "," << vNode->pos.second << ") " << vNode->leaveTime
-                          << std::endl;
-            }*/
+
         } else {
+            if (count == 0) {
+                ++failedCount;
+            } else {
+                ++TLECount;
+            }
             std::cout << "failed" << std::endl;
         }
         std::cout << count << " computing steps" << std::endl;
     }
+
+    std::cout << successCount << " " << failedCount << " " << TLECount << std::endl;
 
 //    solver.addNodeOccupied({0,1},0, 3);
 //    solver.addNodeOccupied({0,2},4, 5);

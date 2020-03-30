@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
     Manager manager("MAPF-benchmark");
     manager.loadScenarioFile("scen-even/room-32-32-4-even-1.scen");
 
-    auto scenario = manager.getScenario(12);
+    auto scenario = manager.getScenario(0);
     auto map = scenario->getMap();
     Solver solver(map);
 

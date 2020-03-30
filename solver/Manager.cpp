@@ -70,7 +70,10 @@ Map *Manager::getMap(const std::string &mapName) {
 }
 
 Scenario *Manager::getScenario(size_t index) {
-    return this->scenarios[index].get();
+    if (index >= 0 && index < this->scenarios.size()) {
+        return this->scenarios[index].get();
+    }
+    return nullptr;
 }
 
 
