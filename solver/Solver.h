@@ -54,7 +54,7 @@ private:
 
 //    std::priority_queue<VirtualNode *, std::vector<VirtualNode *>, VirtualNode> open, closed;
     std::vector<std::vector<Node>> nodes;
-    const Map *map;
+    Map *map;
     const Scenario *scenario;
     VirtualNode *successNode = nullptr;
 
@@ -88,7 +88,7 @@ private:
     void clean();
 
 public:
-    explicit Solver(const Map *map);
+    explicit Solver(Map *map);
 
     ~Solver();
 
@@ -99,6 +99,9 @@ public:
     VirtualNode *step();
 
     std::vector<VirtualNode *> constructPath(VirtualNode *vNode = nullptr);
+
+    void addConstraints(std::vector<Solver::VirtualNode *> vector);
+
 
 //    void addNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, size_t endTime);
 

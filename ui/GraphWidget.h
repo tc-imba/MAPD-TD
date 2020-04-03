@@ -6,6 +6,7 @@
 #define MAPF_GRAPHWIDGET_H
 
 #include "../solver/Solver.h"
+#include "../solver/Manager.h"
 
 #include <QGraphicsView>
 #include <QVector>
@@ -42,11 +43,14 @@ private:
 
     QPushButton *stepButton;
     QGraphicsProxyWidget *stepButtonProxy;
+    QPushButton *agentButton;
+    QGraphicsProxyWidget *agentButtonProxy;
 
     QLabel *label;
     QGraphicsProxyWidget *labelProxy;
 
     Solver *solver;
+    Manager *manager;
     QVector<std::pair<std::pair<size_t, size_t>, int>> savedPath;
     Solver::VirtualNode latestVNode;
     Node *selectedNode = nullptr;
@@ -54,6 +58,7 @@ private:
 
     size_t timestamp = 0;
     size_t step = 0;
+    size_t agentNum = 0;
 
     void reset();
 
@@ -73,7 +78,7 @@ private:
     void keyPressEvent(QKeyEvent *event) override;
 
 public:
-    GraphWidget(QWidget *parent = nullptr);
+    GraphWidget(Manager *manager, QWidget *parent = nullptr);
 
     void setSolver(Solver *solver);
 
@@ -85,9 +90,13 @@ public:
 
     void setTimeStamp(size_t timestamp);
 
+    void initScenario(Scenario *scenario);
+
 private slots:
 
     void handleStepButton();
+
+    void handleAgentButton();
 
 };
 

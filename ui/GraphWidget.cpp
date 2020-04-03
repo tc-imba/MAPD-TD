@@ -13,7 +13,7 @@
 static const int DIRECTION_X[] = {-1, 0, 1, 0};
 static const int DIRECTION_Y[] = {0, 1, 0, -1};
 
-GraphWidget::GraphWidget(QWidget *parent) : QGraphicsView(parent) {
+GraphWidget::GraphWidget(Manager *manager, QWidget *parent) : QGraphicsView(parent), manager(manager) {
     scene = new QGraphicsScene(this);
     scene->setItemIndexMethod(QGraphicsScene::NoIndex);
     scene->setSceneRect(-200, -200, 400, 400);
@@ -22,7 +22,7 @@ GraphWidget::GraphWidget(QWidget *parent) : QGraphicsView(parent) {
     setViewportUpdateMode(BoundingRectViewportUpdate);
     setRenderHint(QPainter::Antialiasing);
     setTransformationAnchor(AnchorUnderMouse);
-    scale(qreal(0.5), qreal(0.5));
+
     setMinimumSize(1000, 1000);
     setWindowTitle(tr("MAPF"));
 
@@ -32,6 +32,8 @@ GraphWidget::GraphWidget(QWidget *parent) : QGraphicsView(parent) {
     auto font = label->font();
     font.setPointSize(12);
     label->setFont(font);
+    label->setFixedWidth(600);
+    label->setFixedHeight(150);
 
     occupiedListWidget = new QListWidget();
     occupiedListWidget->setFixedWidth(200);
@@ -70,6 +72,11 @@ GraphWidget::GraphWidget(QWidget *parent) : QGraphicsView(parent) {
     stepButtonProxy = scene->addWidget(stepButton);
     stepButtonProxy->setVisible(false);
     connect(stepButton, SIGNAL (released()), this, SLOT (handleStepButton()));
+
+    agentButton = new QPushButton("Next Agent");
+    agentButtonProxy = scene->addWidget(agentButton);
+    agentButtonProxy->setVisible(false);
+    connect(agentButton, SIGNAL (released()), this, SLOT (handleAgentButton()));
 }
 
 void GraphWidget::setSolver(Solver *solver) {
@@ -125,11 +132,19 @@ void GraphWidget::setSolver(Solver *solver) {
 
     stepButtonProxy->setVisible(true);
     stepButtonProxy->setPos(startX, startY - 300);
+    agentButtonProxy->setVisible(true);
+    agentButtonProxy->setPos(startX + 230, startY - 300);
 
     labelProxy->setPos(startX, startY - 450);
-    setTimeStamp(0);
-    updateLabel();
-    updateLists();
+
+    size_t mapSize = std::max(height, width);
+    if (mapSize > 16) {
+        scale(qreal(16. / mapSize), qreal(16. / mapSize));
+    }
+
+
+    auto scenario = manager->getScenario(agentNum);
+    initScenario(scenario);
 }
 
 void GraphWidget::reset() {
@@ -147,6 +162,7 @@ void GraphWidget::reset() {
     }
     timestamp = -1;
     step = 0;
+    agentNum = 0;
     selectedNode = nullptr;
     selectedEdge = nullptr;
 }
@@ -347,13 +363,41 @@ void GraphWidget::setTimeStamp(size_t timestamp) {
 
 }
 
+void GraphWidget::initScenario(Scenario *scenario) {
+    timestamp = -1;
+    step = 0;
+    agentNum++;
+
+    clearSelected();
+    for (auto &p : savedPath) {
+        auto node = nodes[p.first.first][p.first.second];
+        node->setOnPath(false);
+        node->setLatest(false);
+        if (p.second >= 0) {
+            node->getEdge(p.second)->setOnPath(false);
+        }
+//        nodes[p.first][p.second]->update();
+    }
+    savedPath.clear();
+
+    solver->initScenario(scenario);
+
+    setTimeStamp(0);
+    updateLabel();
+    updateLists();
+
+    scene->update();
+}
+
 void GraphWidget::handleStepButton() {
-    if (solver->success())
-        return;
+    if (solver->success()) return;
     auto vNode = solver->step();
+    if (!vNode) return;
+
     latestVNode = *vNode;
 
     step += 1;
+//    std::cout << step << " " << vNode->leaveTime << std::endl;
     setTimeStamp(vNode->leaveTime);
 
     for (auto &p : savedPath) {
@@ -398,7 +442,18 @@ void GraphWidget::handleStepButton() {
     updateLists();
 
     scene->update();
+
+    if (solver->success()) {
+        solver->addConstraints(newPath);
+    }
 }
+
+void GraphWidget::handleAgentButton() {
+    auto scenario = manager->getScenario(agentNum);
+    initScenario(scenario);
+}
+
+
 
 
 

@@ -41,22 +41,9 @@ int main() {
                 std::cout << "(" << vNode->pos.first << "," << vNode->pos.second << ") " << vNode->leaveTime
                           << std::endl;
             }
-            std::reverse(vector.begin(), vector.end());
             if (addConstraints) {
-                map->addNodeOccupied(vector[0]->pos, 0, vector[0]->leaveTime + 1);
-                for (size_t j = 1; j < vector.size(); j++) {
-                    size_t endTime = vector[j]->leaveTime + 1;
-                    if (j == vector.size() - 1) endTime = std::numeric_limits<size_t>::max() / 2;
-                    map->addNodeOccupied(vector[j]->pos, vector[j - 1]->leaveTime + 1, endTime);
-                    auto dir = map->getDirectionByPos(vector[j - 1]->pos, vector[j]->pos);
-                    if (dir == Map::Direction::NONE) {
-                        throw std::runtime_error("");
-                    }
-                    map->addEdgeOccupied(vector[j - 1]->pos, dir, vector[j - 1]->leaveTime,
-                                         vector[j - 1]->leaveTime + 1);
-                }
+                solver.addConstraints(vector);
             }
-
         } else {
             if (count == 0) {
                 ++failedCount;

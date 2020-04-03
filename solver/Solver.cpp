@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <limits>
+#include <algorithm>
 
 
 bool Solver::isOccupied(std::map<size_t, size_t> *occupied, size_t startTime, size_t endTime) {
@@ -137,7 +138,7 @@ void Solver::clean() {
 }
 
 
-Solver::Solver(const Map *map) : map(map) {
+Solver::Solver(Map *map) : map(map) {
 
 }
 
@@ -252,7 +253,7 @@ Solver::VirtualNode *Solver::step() {
                     }
                 }
                 if (deleteCount > 1) {
-                    std::cerr << "delete > 1" <<std::endl;
+                    std::cerr << "delete > 1" << std::endl;
                 }
                 addVirtualNodeToList(open, newNode, true);
             } else {
@@ -261,6 +262,23 @@ Solver::VirtualNode *Solver::step() {
         }
     }
     return vNode;
+}
+
+void Solver::addConstraints(std::vector<Solver::VirtualNode *> vector) {
+    std::reverse(vector.begin(), vector.end());
+    map->addNodeOccupied(vector[0]->pos, 0, vector[0]->leaveTime + 1);
+    for (size_t j = 1; j < vector.size(); j++) {
+        size_t endTime = vector[j]->leaveTime + 1;
+        if (j == vector.size() - 1) endTime = std::numeric_limits<size_t>::max() / 2;
+        map->addNodeOccupied(vector[j]->pos, vector[j - 1]->leaveTime + 1, endTime);
+        auto dir = map->getDirectionByPos(vector[j - 1]->pos, vector[j]->pos);
+        if (dir == Map::Direction::NONE) {
+            throw std::runtime_error("");
+        }
+        map->addEdgeOccupied(vector[j - 1]->pos, dir, vector[j - 1]->leaveTime,
+                             vector[j - 1]->leaveTime + 1);
+    }
+
 }
 
 /*
