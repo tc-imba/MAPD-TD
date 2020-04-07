@@ -45,6 +45,8 @@ private:
     QGraphicsProxyWidget *stepButtonProxy;
     QPushButton *agentButton;
     QGraphicsProxyWidget *agentButtonProxy;
+    QPushButton *screenShotButton;
+    QGraphicsProxyWidget *screenShotButtonProxy;
 
     QLabel *label;
     QGraphicsProxyWidget *labelProxy;
@@ -98,6 +100,7 @@ private slots:
 
     void handleAgentButton();
 
+    void handleScreenShotButton();
 };
 
 

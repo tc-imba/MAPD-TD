@@ -6,6 +6,8 @@
 #include <QtWidgets/QDialog>
 #include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QGraphicsProxyWidget>
+#include <QDateTime>
+
 #include "GraphWidget.h"
 #include "Node.h"
 #include "Edge.h"
@@ -23,7 +25,7 @@ GraphWidget::GraphWidget(Manager *manager, QWidget *parent) : QGraphicsView(pare
     setRenderHint(QPainter::Antialiasing);
     setTransformationAnchor(AnchorUnderMouse);
 
-    setMinimumSize(1000, 1000);
+    setMinimumSize(1600, 900);
     setWindowTitle(tr("MAPF"));
 
     label = new QLabel();
@@ -77,6 +79,11 @@ GraphWidget::GraphWidget(Manager *manager, QWidget *parent) : QGraphicsView(pare
     agentButtonProxy = scene->addWidget(agentButton);
     agentButtonProxy->setVisible(false);
     connect(agentButton, SIGNAL (released()), this, SLOT (handleAgentButton()));
+
+    screenShotButton = new QPushButton("Screenshot");
+    screenShotButtonProxy = scene->addWidget(screenShotButton);
+    screenShotButtonProxy->setVisible(false);
+    connect(screenShotButton, SIGNAL (released()), this, SLOT (handleScreenShotButton()));
 }
 
 void GraphWidget::setSolver(Solver *solver) {
@@ -134,6 +141,8 @@ void GraphWidget::setSolver(Solver *solver) {
     stepButtonProxy->setPos(startX, startY - 300);
     agentButtonProxy->setVisible(true);
     agentButtonProxy->setPos(startX + 230, startY - 300);
+    screenShotButtonProxy->setVisible(true);
+    screenShotButtonProxy->setPos(startX + 400, startY - 300);
 
     labelProxy->setPos(startX, startY - 450);
 
@@ -453,6 +462,12 @@ void GraphWidget::handleAgentButton() {
     initScenario(scenario);
 }
 
+void GraphWidget::handleScreenShotButton() {
+    QDateTime current = QDateTime::currentDateTime();
+    QString fileName = "demo/" + current.toString("yyyy-mm-dd-hh-mm-ss") + ".png";
+    std::cerr << fileName.toStdString() << std::endl;
+    grab().save(fileName);
+}
 
 
 
