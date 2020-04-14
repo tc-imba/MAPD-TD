@@ -468,15 +468,3 @@ void GraphWidget::handleScreenShotButton() {
     std::cerr << fileName.toStdString() << std::endl;
     grab().save(fileName);
 }
-
-
-
-
-
-
-
-
-
-
-
-
