@@ -459,7 +459,9 @@ void GraphWidget::handleStepButton() {
 
 void GraphWidget::handleAgentButton() {
     auto scenario = manager->getScenario(agentNum);
-    initScenario(scenario);
+    if (scenario) {
+        initScenario(scenario);
+    }
 }
 
 void GraphWidget::handleScreenShotButton() {
