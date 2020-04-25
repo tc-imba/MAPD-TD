@@ -146,7 +146,7 @@ Solver::~Solver() {
     clean();
 }
 
-void Solver::initScenario(const Scenario *scenario) {
+void Solver::initScenario(const Scenario *scenario, size_t startTime) {
     this->scenario = scenario;
 
     // skip the algorithm if start or end point is blocked
@@ -161,7 +161,7 @@ void Solver::initScenario(const Scenario *scenario) {
     initialize();
 
     // Construct a virtual node (v', h_v', null), added into the OPEN list
-    auto startVNode = createVirtualNode(scenario->getStart(), 0, nullptr, true);
+    auto startVNode = createVirtualNode(scenario->getStart(), startTime, nullptr, true);
     addVirtualNodeToList(open, startVNode, true);
 
     // while the OPEN list is not empty
@@ -278,7 +278,6 @@ void Solver::addConstraints(std::vector<Solver::VirtualNode *> vector) {
         map->addEdgeOccupied(vector[j - 1]->pos, dir, vector[j - 1]->leaveTime,
                              vector[j - 1]->leaveTime + 1);
     }
-
 }
 
 /*

@@ -10,12 +10,12 @@ int main() {
 //    Manager manager("test-benchmark");
 //    manager.loadScenarioFile("test/test.scen");
 
-    Manager manager("MAPF-benchmark");
-    manager.loadScenarioFile("scen-even/room-32-32-4-even-1.scen");
+    Manager manager("test-benchmark");
+
+
+/*    manager.loadScenarioFile("scen-even/room-32-32-4-even-1.scen");
     manager.loadScenarioFile("scen-even/random-32-32-10-even-1.scen");
     bool addConstraints = true;
-
-
     size_t successCount = 0, failedCount = 0, TLECount = 0;
 
     for (int i = 0; i < 200; i++) {
@@ -55,12 +55,10 @@ int main() {
         std::cout << count << " computing steps" << std::endl;
     }
 
-    std::cout << successCount << " " << failedCount << " " << TLECount << std::endl;
+    std::cout << successCount << " " << failedCount << " " << TLECount << std::endl;*/
 
-//    solver.addNodeOccupied({0,1},0, 3);
-//    solver.addNodeOccupied({0,2},4, 5);
-
-//     map->addEdgeOccupied({0, 1}, Map::Direction::RIGHT, 0, 3);
+    auto map = manager.loadTaskFile("task/room-32-32-4-10-2.task");
+    manager.leastFlexFirstAssign(map);
 
     return 0;
 }

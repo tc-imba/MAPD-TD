@@ -92,7 +92,7 @@ public:
 
     ~Solver();
 
-    void initScenario(const Scenario *scenario);
+    void initScenario(const Scenario *scenario, size_t startTime = 0);
 
     bool success() { return successNode != nullptr; };
 
@@ -101,7 +101,6 @@ public:
     std::vector<VirtualNode *> constructPath(VirtualNode *vNode = nullptr);
 
     void addConstraints(std::vector<Solver::VirtualNode *> vector);
-
 
 //    void addNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, size_t endTime);
 

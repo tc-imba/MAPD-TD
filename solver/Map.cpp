@@ -89,6 +89,24 @@ void Map::addNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, size_
     addEdgeOccupied(pos, Map::Direction::NONE, startTime, endTime);
 }
 
+void Map::removeNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime) {
+    OccupiedKey key = {pos, Map::Direction::NONE};
+    auto it = occupiedMap.find(key);
+    if (it != occupiedMap.end()) {
+        auto occupied = it->second.get();
+        auto it2 = occupied->rbegin();
+        if (it2->second >= startTime) {
+            if (it2->first == startTime) {
+//                std::cout << "remove [" << it2->first << ", " << it2->second << ")" << std::endl;
+                occupied->erase(it2->first);
+            } else if (it2->first < startTime) {
+                it2->second = startTime;
+//                std::cout << "changed [" << it2->first << ", " << it2->second << ")" << std::endl;
+            }
+        }
+    }
+}
+
 void Map::addEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime, size_t endTime) {
     if (direction == Map::Direction::LEFT) {
         pos = getPosByDirection(pos, direction).second;
@@ -151,4 +169,14 @@ Map::Direction Map::getDirectionByPos(std::pair<size_t, size_t> pos1, std::pair<
     if (pos1.first == pos2.first && pos1.second > pos2.second) return Direction::LEFT;
     if (pos1.first == pos2.first && pos1.second < pos2.second) return Direction::RIGHT;
     return Direction::NONE;
+}
+
+void Map::printOccupiedMap() const {
+    for (auto it = occupiedMap.begin(); it != occupiedMap.end(); ++it) {
+        std::cout << it->first.pos.first << " " << it->first.pos.second << " " << (int) it->first.direction << ": ";
+        for (auto item : *(it->second.get())) {
+            std::cout << "[" << item.first << "," << item.second << ") ";
+        }
+        std::cout << std::endl;
+    }
 }

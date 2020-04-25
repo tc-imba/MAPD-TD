@@ -66,11 +66,15 @@ public:
 
     void addNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, size_t endTime);
 
+    void removeNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime);
+
     void addEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime, size_t endTime);
 
     bool loadConstraints(const std::string &filename);
 
     auto &getOccupiedMap() const { return this->occupiedMap; };
+
+    void printOccupiedMap() const;
 };
 
 

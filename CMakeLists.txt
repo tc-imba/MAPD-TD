@@ -29,4 +29,6 @@ add_executable(MAPF-ui
 target_link_libraries(MAPF-ui Qt5::Widgets)
 
 add_executable(MAPF-generate generate/main.cpp)
+add_executable(MAPF-generate-task generate/task.cpp solver/Map.cpp solver/Manager.cpp
+        solver/Scenario.cpp solver/Solver.cpp)
 
