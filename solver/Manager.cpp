@@ -119,7 +119,7 @@ void Manager::leastFlexFirstAssign(Map *map) {
     }
 
     while (!tasks.empty()) {
-        computeFlex(solver, 1);
+        computeFlex(solver, 1,1);
         selectTask(map);
 //        exit(0);
 //        break;

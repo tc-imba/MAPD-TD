@@ -22,7 +22,18 @@ For edge, the format is ($x$, $y$, direction) [start, end).
 \item Global: show all information of the nodes and edges.
 \item Non global: show information of the selected node or edge.
 \end{itemize}
+\end{frame}
 
+\begin{frame}
+\frametitle{Explain of A* algorithm\footnote[1]{\url{https://en.wikipedia.org/wiki/A*_search_algorithm}}}
+
+A* is an informed search algorithm, or a best-first search, meaning that it is formulated in terms of weighted graphs: starting from a specific starting node of a graph, it aims to find a path to the given goal node having the smallest cost (least distance travelled, shortest time, etc.). \medskip
+
+The A-Star algorithm maintains two sets\footnote[2]{\url{http://robotics.caltech.edu/wiki/images/e/e0/Astar.pdf}}, the OPEN list and the CLOSED list. The OPEN list keeps track of
+those nodes that need to be examined, while the CLOSED list keeps track of nodes that have already been
+examined. Initially, the OPEN list contains just the initial node, and the CLOSED list is empty. \medskip
+
+The direction defined in the algorithm is 0 for UP, 1 for RIGHT, 2 for DOWN and 3 for LEFT.
 
 \end{frame}
 

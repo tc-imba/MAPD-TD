@@ -58,6 +58,8 @@ size_t Solver::getDistance(std::pair<size_t, size_t> start, std::pair<size_t, si
 Solver::VirtualNode *
 Solver::createVirtualNode(std::pair<size_t, size_t> pos, size_t leaveTime, Solver::VirtualNode *parent, bool isOpen) {
     size_t estimateTime = leaveTime + getDistance(pos, scenario->getEnd());
+//    std::cout << pos.first << " " << pos.second << " " << leaveTime << " "
+//              << getDistance(pos, scenario->getEnd()) << std::endl;
     return new VirtualNode{pos, leaveTime, estimateTime, parent, isOpen};
 }
 
@@ -255,6 +257,7 @@ Solver::VirtualNode *Solver::step() {
                 if (deleteCount > 1) {
                     std::cerr << "delete > 1" << std::endl;
                 }
+                newNode->estimateTime = newNode->leaveTime + getDistance(newNode->pos, scenario->getEnd());
                 addVirtualNodeToList(open, newNode, true);
             } else {
                 delete newNode;

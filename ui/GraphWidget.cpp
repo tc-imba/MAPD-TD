@@ -235,6 +235,8 @@ void GraphWidget::addToOpenClosedList(const Solver::VirtualNode *vNode) {
         text += " -> <null>";
     }
     text += "   " + QString::number(vNode->leaveTime) + ", " + QString::number(vNode->estimateTime);
+//    std::cout << vNode->pos.first << " " << vNode->pos.second << " " << vNode->leaveTime << " "
+//              << vNode->estimateTime << std::endl;
     QListWidgetItem *item;
     if (vNode->isOpen) {
         item = new QListWidgetItem(text, openListWidget);
