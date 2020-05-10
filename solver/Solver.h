@@ -106,6 +106,8 @@ public:
 
 //    void addEdgeOccupied(std::pair<size_t, size_t> pos, Direction direction, size_t startTime, size_t endTime);
 
+    bool isOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime, size_t endTime);
+
     auto getMap() const { return this->map; };
 
     auto getScenario() const { return this->scenario; };

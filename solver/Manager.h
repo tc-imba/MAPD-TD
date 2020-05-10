@@ -20,12 +20,24 @@ public:
         size_t leaveTime;
     };
 
+    struct Flexibility {
+        double beta;
+        std::vector<PathNode> path;
+        Scenario *task;
+    };
+
+    struct Constraint {
+        std::pair<size_t, size_t> pos;
+        Map::Direction direction;
+        size_t start, end;
+    };
+
     struct Agent {
         std::pair<size_t, size_t> originPos, currentPos;
         std::vector<std::unique_ptr<Scenario> > tasks;
         size_t lastTimeStamp = 0;
         std::vector<PathNode> path;
-        std::vector<std::pair<double, std::vector<PathNode>>> flexibility;
+        std::vector<Flexibility> flexibility;
 
         explicit Agent(std::pair<size_t, size_t> pos) : originPos(pos), currentPos(pos) {}
     };
@@ -44,9 +56,13 @@ private:
 
     void assignTask(Map *map, Agent &agent, std::vector<PathNode> &vector);
 
+    std::vector<Constraint> generateConstraints(Map *map, Agent &agent, const std::vector<PathNode> &vector);
+
     Map *loadMapFile(const std::string &filename);
 
     size_t computePath(Solver &solver, std::vector<PathNode> &path, Scenario *task, size_t startTime);
+
+    bool isPathConflict(Solver &solver, Agent &agent, const std::vector<PathNode> &vector);
 
 public:
     explicit Manager(std::string dataPath);
@@ -59,7 +75,7 @@ public:
 
     Map *loadTaskFile(const std::string &filename);
 
-    void leastFlexFirstAssign(Map *map);
+    void leastFlexFirstAssign(Map *map, double phi);
 };
 
 

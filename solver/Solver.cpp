@@ -24,6 +24,16 @@ bool Solver::isOccupied(std::map<size_t, size_t> *occupied, size_t timeStart) {
     return isOccupied(occupied, timeStart, timeStart + 1);
 }
 
+bool Solver::isOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime, size_t endTime) {
+    std::map<size_t, size_t> *occupied = nullptr;
+    if (direction == Map::Direction::NONE) {
+        occupied = nodes[pos.first][pos.second].occupied;
+    } else {
+        occupied = nodes[pos.first][pos.second].edges[(size_t) direction].occupied;
+    }
+    return isOccupied(occupied, startTime, endTime);
+}
+
 std::pair<size_t, size_t>
 Solver::findNotOccupiedInterval(std::map<size_t, size_t> *occupied, size_t startTime, size_t endTime) {
     if (!occupied || occupied->empty()) return {0, std::numeric_limits<size_t>::max()};
@@ -193,12 +203,8 @@ Solver::VirtualNode *Solver::step() {
         return vNode;
     }
 
-    // if h_v + 1 not in O_v
-    if (!isOccupied(node.occupied, vNode->leaveTime + 1)) {
-        // Add (v, h_v+1, v_p) to the OPEN list;
-        auto newNode = createVirtualNode(vNode->pos, vNode->leaveTime + 1, vNode->parent, true);
-        addVirtualNodeToList(open, newNode, true);
-    }
+
+    bool waitFlag = false;
 
     // for each neighbouring node \bar{v} of v do
     for (auto direction : Map::directions) {
@@ -207,6 +213,15 @@ Solver::VirtualNode *Solver::step() {
         auto p = map->getPosByDirection(vNode->pos, direction);
         auto &neighborNode = nodes[p.second.first][p.second.second];
         auto arrivalTime = vNode->leaveTime + 1; // h_v + L_e (L_e = 1 now)
+
+        size_t cv = 0;
+        if (neighborNode.occupied && !neighborNode.occupied->empty()) {
+            auto it2 = neighborNode.occupied->rbegin();
+            cv = it2->second;
+        }
+        if (vNode->leaveTime + 1 < cv) {
+            waitFlag = true;
+        }
 
         // if h_v + L_e not in O_{\bar{v}} and (h_v, h_v + L_e) /\ O_e = 0
         auto arrivalInterval = findNotOccupiedInterval(neighborNode.occupied, arrivalTime);
@@ -264,6 +279,14 @@ Solver::VirtualNode *Solver::step() {
             }
         }
     }
+
+    // if h_v + 1 not in O_v
+    if (waitFlag && !isOccupied(node.occupied, vNode->leaveTime + 1)) {
+        // Add (v, h_v+1, v_p) to the OPEN list;
+        auto newNode = createVirtualNode(vNode->pos, vNode->leaveTime + 1, vNode->parent, true);
+        addVirtualNodeToList(open, newNode, true);
+    }
+
     return vNode;
 }
 
