@@ -57,8 +57,8 @@ int main() {
 
     std::cout << successCount << " " << failedCount << " " << TLECount << std::endl;*/
 
-    auto map = manager.loadTaskFile("task/room-32-32-4-10-2.task");
-    manager.leastFlexFirstAssign(map, 0.25);
-
+//    auto map = manager.loadTaskFile("task/room-32-32-4-10-2.task");
+    auto map = manager.loadTaskFile("task/well-formed-21-35-10-2.task");
+    manager.leastFlexFirstAssign(map, 1);
     return 0;
 }

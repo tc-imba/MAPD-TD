@@ -32,3 +32,5 @@ add_executable(MAPF-generate generate/main.cpp)
 add_executable(MAPF-generate-task generate/task.cpp solver/Map.cpp solver/Manager.cpp
         solver/Scenario.cpp solver/Solver.cpp)
 
+add_executable(MAPF-generate-well-formed generate/well-formed.cpp solver/Map.cpp solver/Manager.cpp
+        solver/Scenario.cpp solver/Solver.cpp)

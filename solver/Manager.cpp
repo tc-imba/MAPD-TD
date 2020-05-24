@@ -217,14 +217,14 @@ void Manager::selectTask(Map *map) {
     }
 }
 
-size_t Manager::computePath(Solver &solver, std::vector<PathNode> &path, Scenario *task, size_t startTime) {
+std::pair<size_t, size_t> Manager::computePath(Solver &solver, std::vector<PathNode> &path, Scenario *task, size_t startTime) {
     solver.initScenario(task, startTime);
     size_t count = 0;
     while (!solver.success() && solver.step() && count < 10000) {
         ++count;
     }
     if (!solver.success()) {
-        return 0;
+        return std::make_pair(0, count);
     }
     auto vNodePath = solver.constructPath();
     for (auto it = vNodePath.rbegin(); it != vNodePath.rend(); ++it) {
@@ -233,7 +233,7 @@ size_t Manager::computePath(Solver &solver, std::vector<PathNode> &path, Scenari
         path.emplace_back(PathNode{vNode->pos, vNode->leaveTime});
     }
 //    std::cout << vNodePath.size() << std::endl;
-    return path.back().leaveTime;
+    return std::make_pair(path.back().leaveTime, count);
 }
 
 bool Manager::isPathConflict(Solver &solver, Agent &agent, const std::vector<PathNode> &vector) {
@@ -252,6 +252,7 @@ bool Manager::isPathConflict(Solver &solver, Agent &agent, const std::vector<Pat
 void Manager::computeFlex(Solver &solver, int x, double phi) {
     auto map = solver.getMap();
     size_t calculateCount = 0, skipCount = 0;
+    size_t stepCount = 0;
     for (size_t i = 0; i < agents.size(); i++) {
 
         // remember previous flexibility
@@ -284,11 +285,15 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
 
             // agent go to task start position
             auto task1 = Scenario(i, map, agents[i].currentPos, task->getStart(), 0);
-            auto agentStartTime = computePath(solver, path, &task1, agentLeaveTime);
+            auto path1 = computePath(solver, path, &task1, agentLeaveTime);
+            auto agentStartTime = path1.first;
+            stepCount += path1.second;
             if (agentStartTime == 0) {
                 agents[i].flexibility.emplace_back(Flexibility{-1, path, task.get()});
             } else {
-                auto agentEndTime = computePath(solver, path, task.get(), agentStartTime);
+                auto path2 = computePath(solver, path, task.get(), agentStartTime);
+                auto agentEndTime = path2.first;
+                stepCount += path2.second;
                 if (agentEndTime == 0) {
                     agents[i].flexibility.emplace_back(Flexibility{-1, path, task.get()});
                 } else {
@@ -309,6 +314,6 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
         // add back node constraint for parking location of the current agent
         map->addNodeOccupied(agents[i].currentPos, agentLeaveTime, std::numeric_limits<size_t>::max() / 2);
     }
-    std::cout << "calculate: " << calculateCount << ", skip: " << skipCount << std::endl;
+    std::cout << "calculate: " << calculateCount << ", skip: " << skipCount << ", step: " << stepCount << std::endl;
 }
 

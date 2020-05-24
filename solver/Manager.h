@@ -60,7 +60,7 @@ private:
 
     Map *loadMapFile(const std::string &filename);
 
-    size_t computePath(Solver &solver, std::vector<PathNode> &path, Scenario *task, size_t startTime);
+    std::pair<size_t, size_t> computePath(Solver &solver, std::vector<PathNode> &path, Scenario *task, size_t startTime);
 
     bool isPathConflict(Solver &solver, Agent &agent, const std::vector<PathNode> &vector);
 

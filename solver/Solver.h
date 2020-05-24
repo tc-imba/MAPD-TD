@@ -22,6 +22,8 @@ public:
         size_t leaveTime;               // h_v
         size_t estimateTime;            // h_v + g(v), estimated by manhattan distance
         VirtualNode *parent;            // v_p
+        std::pair<size_t, size_t> child;// v_c
+        bool hasChild;
         bool isOpen;
     };
 
@@ -57,6 +59,7 @@ private:
     Map *map;
     const Scenario *scenario;
     VirtualNode *successNode = nullptr;
+    static const int algorithmId = 0;
 
 public:
     // isOccupied in [startTime, endTime)
@@ -71,11 +74,19 @@ public:
     std::pair<size_t, size_t>
     findNotOccupiedInterval(std::map<size_t, size_t> *occupied, size_t startTime);
 
+    size_t findFirstNotOccupiedTimestamp(std::map<size_t, size_t> *occupied, size_t startTime, size_t duration);
+
+    size_t findFirstNotOccupiedTimestamp(std::map<size_t, size_t> *occupied, std::map<size_t, size_t> *occupied2,
+                                         size_t startTime, size_t duration);
+
 private:
 
     size_t getDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
 
     VirtualNode *createVirtualNode(std::pair<size_t, size_t> pos, size_t leaveTime, VirtualNode *parent, bool isOpen);
+
+    VirtualNode *createVirtualNode(std::pair<size_t, size_t> pos, size_t leaveTime, VirtualNode *parent,
+                                   std::pair<size_t, size_t> child, bool isOpen);
 
     VirtualNode *removeVirtualNodeFromList(std::multimap<size_t, VirtualNode *> &list,
                                            std::multimap<size_t, VirtualNode *>::iterator it,
@@ -86,6 +97,8 @@ private:
     void initialize();
 
     void clean();
+
+    void replaceNode(VirtualNode *vNode, std::pair<size_t, size_t> pos, Node &neighborNode, Edge &edge, bool needExamine);
 
 public:
     explicit Solver(Map *map);
