@@ -59,7 +59,7 @@ private:
     Map *map;
     const Scenario *scenario;
     VirtualNode *successNode = nullptr;
-    static const int algorithmId = 0;
+    static const int algorithmId = 1;
 
 public:
     // isOccupied in [startTime, endTime)

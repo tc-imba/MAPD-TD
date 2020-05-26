@@ -77,7 +77,7 @@ size_t Solver::findFirstNotOccupiedTimestamp(std::map<size_t, size_t> *occupied,
 size_t Solver::findFirstNotOccupiedTimestamp(std::map<size_t, size_t> *occupied, std::map<size_t, size_t> *occupied2,
                                              size_t startTime, size_t duration) {
     if (!occupied || occupied->empty()) {
-        return findFirstNotOccupiedTimestamp(occupied2, startTime + duration, 1);
+        return findFirstNotOccupiedTimestamp(occupied2, startTime + duration, 1) - duration;
     }
     auto it = occupied->upper_bound(startTime);
     if (it != occupied->begin()) --it;
@@ -88,7 +88,7 @@ size_t Solver::findFirstNotOccupiedTimestamp(std::map<size_t, size_t> *occupied,
         }
         newTime = it->second;
     }
-    return findFirstNotOccupiedTimestamp(occupied2, std::max(startTime, newTime) + duration, 1);
+    return findFirstNotOccupiedTimestamp(occupied2, std::max(startTime, newTime) + duration, 1) - duration;
 }
 
 size_t Solver::getDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end) {
@@ -306,8 +306,8 @@ Solver::VirtualNode *Solver::step() {
     }
 
     if (algorithmId == 0) {
-        bool waitFlag = false;
-        //  bool waitFlag = true;
+//        bool waitFlag = false;
+        bool waitFlag = true;
 
         // for each neighbouring node \bar{v} of v do
         for (auto direction : Map::directions) {
@@ -342,8 +342,14 @@ Solver::VirtualNode *Solver::step() {
                 if (!edge.available) continue; // no node
                 auto p = map->getPosByDirection(vNode->pos, direction);
                 auto &neighborNode = nodes[p.second.first][p.second.second];
+                if (vNode->parent && p.second == vNode->parent->pos) continue; // v_n=v_p
+
                 auto newTime = findFirstNotOccupiedTimestamp(edge.occupied, neighborNode.occupied, vNode->leaveTime, 1);
-                if (newTime < std::numeric_limits<size_t>::max() / 2) {
+                auto waitInterval = findNotOccupiedInterval(node.occupied, vNode->leaveTime, newTime);
+
+//                std::cout << vNode->leaveTime << " " << newTime << std::endl;
+
+                if (newTime < std::numeric_limits<size_t>::max() / 2 && waitInterval.first < waitInterval.second) {
                     auto newNode = createVirtualNode(vNode->pos, newTime, vNode->parent, p.second, true);
                     addVirtualNodeToList(open, newNode, true);
                 }
@@ -352,11 +358,21 @@ Solver::VirtualNode *Solver::step() {
             auto direction = map->getDirectionByPos(vNode->pos, vNode->child);
             auto &edge = node.edges[(size_t) direction];
             auto &neighborNode = nodes[vNode->child.first][vNode->child.second];
-            auto newTime = findFirstNotOccupiedTimestamp(edge.occupied, neighborNode.occupied, vNode->leaveTime + 1, 1);
-            if (newTime < std::numeric_limits<size_t>::max() / 2) {
-                auto newNode = createVirtualNode(vNode->pos, newTime, vNode->parent, vNode->child, true);
-                addVirtualNodeToList(open, newNode, true);
+
+            if (neighborNode.occupied && !neighborNode.occupied->empty()) {
+                auto it2 = neighborNode.occupied->upper_bound(vNode->leaveTime + 1);
+                if (it2 != neighborNode.occupied->end()) {
+                    auto newTime = findFirstNotOccupiedTimestamp(edge.occupied, neighborNode.occupied, it2->first, 1);
+                    auto waitInterval = findNotOccupiedInterval(node.occupied, vNode->leaveTime, newTime);
+//                    std::cout << vNode->leaveTime << " " << it2->first << " " << newTime << std::endl;
+
+                    if (newTime < std::numeric_limits<size_t>::max() / 2 && waitInterval.first < waitInterval.second) {
+                        auto newNode = createVirtualNode(vNode->pos, newTime, vNode->parent, vNode->child, true);
+                        addVirtualNodeToList(open, newNode, true);
+                    }
+                }
             }
+
             replaceNode(vNode, vNode->child, neighborNode, edge, false);
         }
     }

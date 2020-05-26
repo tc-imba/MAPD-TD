@@ -136,6 +136,9 @@ void Manager::assignTask(Map *map, Agent &agent, std::vector<PathNode> &vector) 
     for (auto &constraint: constraints) {
         map->addEdgeOccupied(constraint.pos, constraint.direction, constraint.start, constraint.end);
     }
+//    for (auto &node:vector) {
+//        std::cout << node.pos.first << " " << node.pos.second << " " << node.leaveTime << std::endl;
+//    }
     agent.path.insert(agent.path.end(), vector.begin(), vector.end());
     agent.currentPos = vector.back().pos;
     agent.lastTimeStamp = vector.back().leaveTime;
@@ -220,7 +223,7 @@ void Manager::selectTask(Map *map) {
 std::pair<size_t, size_t> Manager::computePath(Solver &solver, std::vector<PathNode> &path, Scenario *task, size_t startTime) {
     solver.initScenario(task, startTime);
     size_t count = 0;
-    while (!solver.success() && solver.step() && count < 10000) {
+    while (!solver.success() && solver.step() && count < 100000) {
         ++count;
     }
     if (!solver.success()) {
