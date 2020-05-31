@@ -50,7 +50,7 @@ private:
     std::vector<Agent> agents;
     std::list<std::unique_ptr<Scenario> > tasks;
 
-    void computeFlex(Solver &solver, int x, double phi=0.25);
+    void computeFlex(Solver &solver, int x, double phi = 0.25);
 
     void selectTask(Map *map);
 
@@ -60,7 +60,8 @@ private:
 
     Map *loadMapFile(const std::string &filename);
 
-    std::pair<size_t, size_t> computePath(Solver &solver, std::vector<PathNode> &path, Scenario *task, size_t startTime);
+    std::pair<size_t, size_t> computePath(Solver &solver, std::vector<PathNode> &path, Scenario *task,
+                                          size_t startTime, size_t deadline);
 
     bool isPathConflict(Solver &solver, Agent &agent, const std::vector<PathNode> &vector);
 

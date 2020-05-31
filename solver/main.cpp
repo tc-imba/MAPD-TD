@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <limits>
 #include <exception>
 #include <algorithm>
@@ -7,6 +8,9 @@
 #include "Solver.h"
 
 int main() {
+//    std::ofstream fout("4.txt");
+//    std::cout.rdbuf(fout.rdbuf());
+
 //    Manager manager("test-benchmark");
 //    manager.loadScenarioFile("test/test.scen");
 

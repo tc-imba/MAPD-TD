@@ -286,13 +286,17 @@ void Solver::replaceNode(VirtualNode *vNode, std::pair<size_t, size_t> pos,
 }
 
 
-Solver::VirtualNode *Solver::step() {
+Solver::VirtualNode *Solver::step(size_t deadline) {
     if (open.empty()) return nullptr;
 
     // Get a virtual node (v, h_v, v_p) off the OPEN list with the minimum h + g(v) value
     auto it = open.begin();
     auto vNode = removeVirtualNodeFromList(open, it, false);
     auto &node = nodes[vNode->pos.first][vNode->pos.second];
+
+    if (vNode->leaveTime >= deadline) {
+        return nullptr;
+    }
 
     // Add (v, h_v, v_p) to the CLOSED list;
     vNode->isOpen = false;

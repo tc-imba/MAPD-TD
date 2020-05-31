@@ -13,6 +13,7 @@
 #include <map>
 #include <unordered_map>
 #include <memory>
+#include <limits>
 
 class Solver {
 public:
@@ -59,7 +60,7 @@ private:
     Map *map;
     const Scenario *scenario;
     VirtualNode *successNode = nullptr;
-    static const int algorithmId = 1;
+    static const int algorithmId = 0;
 
 public:
     // isOccupied in [startTime, endTime)
@@ -109,7 +110,7 @@ public:
 
     bool success() { return successNode != nullptr; };
 
-    VirtualNode *step();
+    VirtualNode *step(size_t deadline = std::numeric_limits<std::size_t>::max() / 2);
 
     std::vector<VirtualNode *> constructPath(VirtualNode *vNode = nullptr);
 

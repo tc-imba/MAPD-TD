@@ -220,10 +220,11 @@ void Manager::selectTask(Map *map) {
     }
 }
 
-std::pair<size_t, size_t> Manager::computePath(Solver &solver, std::vector<PathNode> &path, Scenario *task, size_t startTime) {
+std::pair<size_t, size_t> Manager::computePath(Solver &solver, std::vector<PathNode> &path,
+                                               Scenario *task, size_t startTime, size_t deadline) {
     solver.initScenario(task, startTime);
     size_t count = 0;
-    while (!solver.success() && solver.step() && count < 100000) {
+    while (!solver.success() && solver.step(deadline) && count < 10000) {
         ++count;
     }
     if (!solver.success()) {
@@ -256,6 +257,12 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
     auto map = solver.getMap();
     size_t calculateCount = 0, skipCount = 0;
     size_t stepCount = 0;
+    std::vector<size_t> upperBounds;
+    for (auto &task: tasks) {
+        double deadline = (1 + phi) * task->getOptimal();
+        upperBounds.emplace_back(deadline + 1);
+    }
+
     for (size_t i = 0; i < agents.size(); i++) {
 
         // remember previous flexibility
@@ -268,47 +275,77 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
         // clear node constraint for parking location of the current agent
         map->removeNodeOccupied(agents[i].currentPos, agentLeaveTime);
 
+        // mark some tasks to recalculate
+        std::vector<bool> recalculateTasks(tasks.size(), true);
+
         size_t j = 0;
         for (auto &task: tasks) {
+            // set deadline
+            double deadline = (1 + phi) * task->getOptimal();
+            auto &upperBound = upperBounds[j];
+
             // skip removed tasks
             while (prevIndex < prevFlexibility.size() && prevFlexibility[prevIndex].task != task.get()) {
                 ++prevIndex;
             }
             // skip not conflict path
-            if (prevIndex < prevFlexibility.size()) {
+/*            if (prevIndex < prevFlexibility.size()) {
                 auto &path = prevFlexibility[prevIndex].path;
                 if (!isPathConflict(solver, agents[i], prevFlexibility[prevIndex].path)) {
-                    agents[i].flexibility.emplace_back(prevFlexibility[prevIndex]);
+                    auto &prev = prevFlexibility[prevIndex];
+                    if (prev.beta >= 0) {
+                        upperBound = std::min(upperBound, (size_t) (deadline - prev.beta + 1));
+                    }
+                    agents[i].flexibility.emplace_back(prev);
+//                    std::cout << "skip: " << i << " " << j << " " << agents[i].flexibility.back().beta << std::endl;
                     j++;
                     skipCount++;
+//                    recalculateTasks[j] = false;
                     continue;
                 }
-            }
+            }*/
+//            j++;
+//        }
+//        j = 0;
+//        for (auto &task: tasks) {
+//             skip not conflict path
+//            if (!recalculateTasks[j]) {
+//                j++;
+//                continue;
+//            }
+//
+//             set deadline
+//            double deadline = (1 + phi) * task->getOptimal();
+//            auto &upperBound = upperBounds[j];
+
             std::vector<PathNode> path;
 
             // agent go to task start position
             auto task1 = Scenario(i, map, agents[i].currentPos, task->getStart(), 0);
-            auto path1 = computePath(solver, path, &task1, agentLeaveTime);
+            auto path1 = computePath(solver, path, &task1, agentLeaveTime, upperBound);
             auto agentStartTime = path1.first;
             stepCount += path1.second;
             if (agentStartTime == 0) {
                 agents[i].flexibility.emplace_back(Flexibility{-1, path, task.get()});
             } else {
-                auto path2 = computePath(solver, path, task.get(), agentStartTime);
+                auto path2 = computePath(solver, path, task.get(), agentStartTime, upperBound);
                 auto agentEndTime = path2.first;
                 stepCount += path2.second;
                 if (agentEndTime == 0) {
                     agents[i].flexibility.emplace_back(Flexibility{-1, path, task.get()});
                 } else {
                     size_t pathLength = agentEndTime - agentLeaveTime;
-                    double beta = (1 + phi) * task->getOptimal();
+                    double beta = deadline;
                     if (x == 1) {
                         beta -= (double) (agentLeaveTime + pathLength);
+                    }
+                    if (beta > 0) {
+                        upperBound = std::min(upperBound, (size_t) (deadline - beta + 1));
                     }
                     agents[i].flexibility.emplace_back(Flexibility{beta, path, task.get()});
                 }
             }
-//            std::cout << i << " " << j << " " << agents[i].flexibility.back().first << std::endl;
+//            std::cout << "calculate: " << i << " " << j << " " << agents[i].flexibility.back().beta << std::endl;
 //            exit(0);
             j++;
             calculateCount++;
