@@ -8,10 +8,10 @@
 #include <sstream>
 #include <iostream>
 #include <limits>
+#include <algorithm>
 
-Manager::Manager(std::string dataPath) : dataPath(std::move(dataPath)) {
-
-}
+Manager::Manager(std::string dataPath, size_t maxStep, bool boundFlag, bool sortFlag)
+        : dataPath(std::move(dataPath)), maxStep(maxStep), boundFlag(boundFlag), sortFlag(sortFlag) {}
 
 Map *Manager::loadMapFile(const std::string &mapName) {
     auto filePath = dataPath + "/map/" + mapName;
@@ -110,8 +110,8 @@ Map *Manager::loadTaskFile(const std::string &filename) {
     return map;
 }
 
-void Manager::leastFlexFirstAssign(Map *map, double phi) {
-    Solver solver(map);
+void Manager::leastFlexFirstAssign(Map *map, int algorithm, double phi) {
+    Solver solver(map, algorithm);
 
     // add node constraints for parking locations
     for (auto &agent: agents) {
@@ -224,7 +224,7 @@ std::pair<size_t, size_t> Manager::computePath(Solver &solver, std::vector<PathN
                                                Scenario *task, size_t startTime, size_t deadline) {
     solver.initScenario(task, startTime);
     size_t count = 0;
-    while (!solver.success() && solver.step(deadline) && count < 10000) {
+    while (!solver.success() && solver.step(deadline) && count < maxStep) {
         ++count;
     }
     if (!solver.success()) {
@@ -257,11 +257,20 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
     auto map = solver.getMap();
     size_t calculateCount = 0, skipCount = 0;
     size_t stepCount = 0;
-    std::vector<size_t> upperBounds;
+/*    std::vector<size_t> upperBounds;
     for (auto &task: tasks) {
-        double deadline = (1 + phi) * task->getOptimal();
-        upperBounds.emplace_back(deadline + 1);
-    }
+        if (boundFlag) {
+            double deadline = (1 + phi) * task->getOptimal();
+            upperBounds.emplace_back(deadline + 1);
+        } else {
+            upperBounds.emplace_back(std::numeric_limits<size_t>::max() / 2);
+        }
+    }*/
+
+    // a vector to sort the agents of each task by flexibility
+    std::vector<std::vector<std::pair<size_t, double> > >
+            sortTasks(tasks.size(),
+                      std::vector<std::pair<size_t, double> >(agents.size()));
 
     for (size_t i = 0; i < agents.size(); i++) {
 
@@ -270,19 +279,11 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
         prevFlexibility.swap(agents[i].flexibility);
         size_t prevIndex = 0;
 
-        auto agentLeaveTime = agents[i].lastTimeStamp;
-
-        // clear node constraint for parking location of the current agent
-        map->removeNodeOccupied(agents[i].currentPos, agentLeaveTime);
-
-        // mark some tasks to recalculate
-        std::vector<bool> recalculateTasks(tasks.size(), true);
-
         size_t j = 0;
         for (auto &task: tasks) {
             // set deadline
-            double deadline = (1 + phi) * task->getOptimal();
-            auto &upperBound = upperBounds[j];
+//            double deadline = (1 + phi) * task->getOptimal();
+//            auto &upperBound = upperBounds[j];
 
             // skip removed tasks
             while (prevIndex < prevFlexibility.size() && prevFlexibility[prevIndex].task != task.get()) {
@@ -304,25 +305,54 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
                     continue;
                 }
             }*/
-//            j++;
-//        }
-//        j = 0;
-//        for (auto &task: tasks) {
-//             skip not conflict path
-//            if (!recalculateTasks[j]) {
-//                j++;
-//                continue;
-//            }
-//
-//             set deadline
+            double beta = -1;
+            if (prevIndex < prevFlexibility.size()) {
+                beta = prevFlexibility[prevIndex].beta;
+            } else {
+                // here we use the manhattan distance to sort for beta < 0
+                beta -= std::abs((double) agents[i].currentPos.first - task->getStart().first);
+                beta -= std::abs((double) agents[i].currentPos.second - task->getStart().second);
+            }
+            sortTasks[j][i] = std::make_pair(i, beta);
+            j++;
+        }
+    }
+
+    size_t j = 0;
+    for (auto &task: tasks) {
+        // sort the agents
+        if (sortFlag) {
+            std::sort(sortTasks[j].begin(), sortTasks[j].end(),
+                      [](const auto &a, const auto &b) { return a.second > b.second; });
+        }
+
+        // set branch and bound
+        double deadline = (1 + phi) * task->getOptimal();
+        size_t upperBound;
+        if (boundFlag) {
+            upperBound = deadline + 1;
+        } else {
+            upperBound = std::numeric_limits<size_t>::max() / 2;
+        }
+
+        for (auto &p : sortTasks[j]) {
+            auto i = p.first;
+            auto agentLeaveTime = agents[i].lastTimeStamp;
+
+            // clear node constraint for parking location of the current agent
+            map->removeNodeOccupied(agents[i].currentPos, agentLeaveTime);
+
 //            double deadline = (1 + phi) * task->getOptimal();
 //            auto &upperBound = upperBounds[j];
 
             std::vector<PathNode> path;
 
+
             // agent go to task start position
             auto task1 = Scenario(i, map, agents[i].currentPos, task->getStart(), 0);
             auto path1 = computePath(solver, path, &task1, agentLeaveTime, upperBound);
+
+
             auto agentStartTime = path1.first;
             stepCount += path1.second;
             if (agentStartTime == 0) {
@@ -339,20 +369,20 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
                     if (x == 1) {
                         beta -= (double) (agentLeaveTime + pathLength);
                     }
-                    if (beta > 0) {
+                    if (beta > 0 && boundFlag) {
                         upperBound = std::min(upperBound, (size_t) (deadline - beta + 1));
                     }
                     agents[i].flexibility.emplace_back(Flexibility{beta, path, task.get()});
                 }
             }
-//            std::cout << "calculate: " << i << " " << j << " " << agents[i].flexibility.back().beta << std::endl;
-//            exit(0);
-            j++;
-            calculateCount++;
-        }
 
-        // add back node constraint for parking location of the current agent
-        map->addNodeOccupied(agents[i].currentPos, agentLeaveTime, std::numeric_limits<size_t>::max() / 2);
+            // add back node constraint for parking location of the current agent
+            map->addNodeOccupied(agents[i].currentPos, agentLeaveTime, std::numeric_limits<size_t>::max() / 2);
+
+            calculateCount++;
+//            std::cout << "calculate: " << i << " " << j << " " << agents[i].flexibility.back().beta << std::endl;
+        }
+        j++;
     }
     std::cout << "calculate: " << calculateCount << ", skip: " << skipCount << ", step: " << stepCount << std::endl;
 }

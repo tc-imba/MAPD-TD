@@ -62,7 +62,7 @@ size_t Solver::findFirstNotOccupiedTimestamp(std::map<size_t, size_t> *occupied,
     if (!occupied || occupied->empty()) return startTime;
     auto it = occupied->upper_bound(startTime);
     if (it != occupied->begin()) --it;
-    size_t newTime = 0;
+    size_t newTime = startTime;
     for (; it != occupied->end(); ++it) {
         if (startTime <= newTime && newTime + duration <= it->first) {
             return newTime;
@@ -81,7 +81,7 @@ size_t Solver::findFirstNotOccupiedTimestamp(std::map<size_t, size_t> *occupied,
     }
     auto it = occupied->upper_bound(startTime);
     if (it != occupied->begin()) --it;
-    size_t newTime = 0;
+    size_t newTime = startTime;
     for (; it != occupied->end(); ++it) {
         if (startTime <= newTime && newTime + duration <= it->first && !isOccupied(occupied2, newTime + duration)) {
             return newTime;
@@ -190,7 +190,7 @@ void Solver::clean() {
 }
 
 
-Solver::Solver(Map *map) : map(map) {
+Solver::Solver(Map *map, int algorithmId) : map(map), algorithmId(algorithmId) {
 
 }
 
@@ -348,10 +348,17 @@ Solver::VirtualNode *Solver::step(size_t deadline) {
                 auto &neighborNode = nodes[p.second.first][p.second.second];
                 if (vNode->parent && p.second == vNode->parent->pos) continue; // v_n=v_p
 
+                if (logging && p.second.first == 9 && p.second.second == 25) {
+                    std::cerr << "debug" << std::endl;
+                }
+
                 auto newTime = findFirstNotOccupiedTimestamp(edge.occupied, neighborNode.occupied, vNode->leaveTime, 1);
                 auto waitInterval = findNotOccupiedInterval(node.occupied, vNode->leaveTime, newTime);
 
-//                std::cout << vNode->leaveTime << " " << newTime << std::endl;
+                if (logging) {
+                    std::cout << vNode->pos.first << " " << vNode->pos.second << " " << vNode->leaveTime << " -> "
+                              << p.second.first << " " << p.second.second << " " << newTime << std::endl;
+                }
 
                 if (newTime < std::numeric_limits<size_t>::max() / 2 && waitInterval.first < waitInterval.second) {
                     auto newNode = createVirtualNode(vNode->pos, newTime, vNode->parent, p.second, true);

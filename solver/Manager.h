@@ -49,8 +49,11 @@ private:
 
     std::vector<Agent> agents;
     std::list<std::unique_ptr<Scenario> > tasks;
+    size_t maxStep;
+    bool boundFlag;
+    bool sortFlag;
 
-    void computeFlex(Solver &solver, int x, double phi = 0.25);
+    void computeFlex(Solver &solver, int x, double phi);
 
     void selectTask(Map *map);
 
@@ -66,7 +69,7 @@ private:
     bool isPathConflict(Solver &solver, Agent &agent, const std::vector<PathNode> &vector);
 
 public:
-    explicit Manager(std::string dataPath);
+    explicit Manager(std::string dataPath, size_t maxStep = 10000, bool boundFlag = true, bool sortFlag = true);
 
     Map *getMap(const std::string &mapName);
 
@@ -76,7 +79,7 @@ public:
 
     Map *loadTaskFile(const std::string &filename);
 
-    void leastFlexFirstAssign(Map *map, double phi);
+    void leastFlexFirstAssign(Map *map, int algorithm, double phi);
 };
 
 

@@ -60,7 +60,8 @@ private:
     Map *map;
     const Scenario *scenario;
     VirtualNode *successNode = nullptr;
-    static const int algorithmId = 0;
+    const int algorithmId;
+    bool logging = false;
 
 public:
     // isOccupied in [startTime, endTime)
@@ -99,10 +100,11 @@ private:
 
     void clean();
 
-    void replaceNode(VirtualNode *vNode, std::pair<size_t, size_t> pos, Node &neighborNode, Edge &edge, bool needExamine);
+    void
+    replaceNode(VirtualNode *vNode, std::pair<size_t, size_t> pos, Node &neighborNode, Edge &edge, bool needExamine);
 
 public:
-    explicit Solver(Map *map);
+    explicit Solver(Map *map, int algorithmId = 0);
 
     ~Solver();
 
@@ -121,6 +123,8 @@ public:
 //    void addEdgeOccupied(std::pair<size_t, size_t> pos, Direction direction, size_t startTime, size_t endTime);
 
     bool isOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime, size_t endTime);
+
+    void setLogging(bool flag) { logging = flag; };
 
     auto getMap() const { return this->map; };
 
