@@ -9,6 +9,7 @@
 #include <iostream>
 #include <limits>
 #include <algorithm>
+#include <chrono>
 
 Manager::Manager(std::string dataPath, size_t maxStep, bool boundFlag, bool sortFlag)
         : dataPath(std::move(dataPath)), maxStep(maxStep), boundFlag(boundFlag), sortFlag(sortFlag) {}
@@ -118,12 +119,19 @@ void Manager::leastFlexFirstAssign(Map *map, int algorithm, double phi) {
         map->addNodeOccupied(agent.originPos, agent.lastTimeStamp, std::numeric_limits<size_t>::max() / 2);
     }
 
+    auto start = std::chrono::system_clock::now();
+
     while (!tasks.empty()) {
         computeFlex(solver, 1, phi);
         selectTask(map);
 //        exit(0);
 //        break;
     }
+
+    auto end = std::chrono::system_clock::now();
+    auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+    std::cout << "time: " << time << "ms" << std::endl;
 
 }
 

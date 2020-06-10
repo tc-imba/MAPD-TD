@@ -29,7 +29,7 @@ int main(int argc, const char *argv[]) {
     optionParser.add("0", false, 1, 0, "Algorithm", "-a", "--algorithm", &validAlgorithm);
 
     ez::ezOptionValidator validMaxStep("u4");
-    optionParser.add("10000", false, 1, 0, "Max Step", "--max-step", &validMaxStep);
+    optionParser.add("100000", false, 1, 0, "Max Step", "--max-step", &validMaxStep);
 
     optionParser.add("", false, 0, 0, "Use Branch and Bound", "-b", "--bound");
     optionParser.add("", false, 0, 0, "Use Sort", "-s", "--sort");
@@ -50,21 +50,21 @@ int main(int argc, const char *argv[]) {
     boundFlag = optionParser.isSet("--bound");
     sortFlag = optionParser.isSet("--sort");
 
-//    auto coutBuf = std::cout.rdbuf();
-//    std::ofstream fout;
-//    if (!outputFile.empty()) {
-//        fout.open(outputFile);
-//        std::cout.rdbuf(fout.rdbuf());
-//    }
+    auto coutBuf = std::cout.rdbuf();
+    std::ofstream fout;
+    if (!outputFile.empty()) {
+        fout.open(outputFile);
+        std::cout.rdbuf(fout.rdbuf());
+    }
 
     Manager manager(dataPath, maxStep, boundFlag, sortFlag);
     auto map = manager.loadTaskFile(taskFile);
     manager.leastFlexFirstAssign(map, algorithmId, phi);
 
-//    if (!outputFile.empty()) {
-//        std::cout.rdbuf(coutBuf);
-//        fout.close();
-//    }
+    if (!outputFile.empty()) {
+        std::cout.rdbuf(coutBuf);
+        fout.close();
+    }
 
     return 0;
 }
