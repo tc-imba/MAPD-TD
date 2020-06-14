@@ -24,6 +24,7 @@ public:
         double beta;
         std::vector<PathNode> path;
         Scenario *task;
+        size_t occupiedAgent;
     };
 
     struct Constraint {
@@ -52,6 +53,7 @@ private:
     size_t maxStep;
     bool boundFlag;
     bool sortFlag;
+    bool occupiedFlag;
 
     void computeFlex(Solver &solver, int x, double phi);
 
@@ -69,7 +71,8 @@ private:
     bool isPathConflict(Solver &solver, Agent &agent, const std::vector<PathNode> &vector);
 
 public:
-    explicit Manager(std::string dataPath, size_t maxStep = 10000, bool boundFlag = true, bool sortFlag = true);
+    explicit Manager(std::string dataPath, size_t maxStep = 10000,
+                     bool boundFlag = true, bool sortFlag = true, bool occupiedFlag = true);
 
     Map *getMap(const std::string &mapName);
 

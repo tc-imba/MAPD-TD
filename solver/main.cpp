@@ -57,7 +57,7 @@ int main(int argc, const char *argv[]) {
         std::cout.rdbuf(fout.rdbuf());
     }
 
-    Manager manager(dataPath, maxStep, boundFlag, sortFlag);
+    Manager manager(dataPath, maxStep, boundFlag, sortFlag, true);
     auto map = manager.loadTaskFile(taskFile);
     manager.leastFlexFirstAssign(map, algorithmId, phi);
 
