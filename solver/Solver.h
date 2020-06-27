@@ -62,6 +62,7 @@ private:
     VirtualNode *successNode = nullptr;
     const int algorithmId;
     bool logging = false;
+    size_t deadline;
 
 public:
     // isOccupied in [startTime, endTime)
@@ -108,11 +109,12 @@ public:
 
     ~Solver();
 
-    void initScenario(const Scenario *scenario, size_t startTime = 0);
+    void initScenario(const Scenario *scenario, size_t startTime = 0,
+            size_t deadline = std::numeric_limits<std::size_t>::max() / 2);
 
     bool success() { return successNode != nullptr; };
 
-    VirtualNode *step(size_t deadline = std::numeric_limits<std::size_t>::max() / 2);
+    VirtualNode *step();
 
     std::vector<VirtualNode *> constructPath(VirtualNode *vNode = nullptr);
 

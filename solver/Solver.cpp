@@ -128,6 +128,10 @@ Solver::VirtualNode *Solver::removeVirtualNodeFromList(std::multimap<size_t, Vir
 
 void Solver::addVirtualNodeToList(std::multimap<size_t, VirtualNode *> &list,
                                   Solver::VirtualNode *vNode, bool editNode) {
+    if (vNode->estimateTime >= deadline) {
+        delete vNode;
+        return;
+    }
     list.emplace(vNode->estimateTime, vNode);
     if (editNode) {
         auto &node = nodes[vNode->pos.first][vNode->pos.second];
@@ -198,8 +202,9 @@ Solver::~Solver() {
     clean();
 }
 
-void Solver::initScenario(const Scenario *scenario, size_t startTime) {
+void Solver::initScenario(const Scenario *scenario, size_t startTime, size_t deadline) {
     this->scenario = scenario;
+    this->deadline = deadline;
 
     // skip the algorithm if start or end point is blocked
     auto start = scenario->getStart();
@@ -286,7 +291,7 @@ void Solver::replaceNode(VirtualNode *vNode, std::pair<size_t, size_t> pos,
 }
 
 
-Solver::VirtualNode *Solver::step(size_t deadline) {
+Solver::VirtualNode *Solver::step() {
     if (open.empty()) return nullptr;
 
     // Get a virtual node (v, h_v, v_p) off the OPEN list with the minimum h + g(v) value
@@ -294,9 +299,9 @@ Solver::VirtualNode *Solver::step(size_t deadline) {
     auto vNode = removeVirtualNodeFromList(open, it, false);
     auto &node = nodes[vNode->pos.first][vNode->pos.second];
 
-    if (vNode->leaveTime >= deadline) {
-        return nullptr;
-    }
+//    if (vNode->leaveTime >= deadline) {
+//        return nullptr;
+//    }
 
     // Add (v, h_v, v_p) to the CLOSED list;
     vNode->isOpen = false;
@@ -310,8 +315,8 @@ Solver::VirtualNode *Solver::step(size_t deadline) {
     }
 
     if (algorithmId == 0) {
-//        bool waitFlag = false;
-        bool waitFlag = true;
+        bool waitFlag = false;
+//        bool waitFlag = true;
 
         // for each neighbouring node \bar{v} of v do
         for (auto direction : Map::directions) {

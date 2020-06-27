@@ -20,22 +20,30 @@ public:
         size_t leaveTime;
     };
 
-    struct Flexibility {
-        double beta;
-        std::vector<PathNode> path;
-        Scenario *task;
-        size_t occupiedAgent;
-    };
-
     struct Constraint {
         std::pair<size_t, size_t> pos;
         Map::Direction direction;
         size_t start, end;
     };
 
+    struct Task {
+        Scenario scenario;
+        double maxBeta = -1;
+        size_t maxBetaAgent = std::numeric_limits<size_t>::max();
+
+        explicit Task(Scenario &&scenario) : scenario(scenario) {}
+    };
+
+    struct Flexibility {
+        double beta;
+        std::vector<PathNode> path;
+        Task *task;
+        size_t occupiedAgent;
+    };
+
     struct Agent {
         std::pair<size_t, size_t> originPos, currentPos;
-        std::vector<std::unique_ptr<Scenario> > tasks;
+        std::vector<std::unique_ptr<Task> > tasks;
         size_t lastTimeStamp = 0;
         std::vector<PathNode> path;
         std::vector<Flexibility> flexibility;
@@ -49,7 +57,11 @@ private:
     std::vector<std::unique_ptr<Scenario> > scenarios;
 
     std::vector<Agent> agents;
-    std::list<std::unique_ptr<Scenario> > tasks;
+    std::vector<std::unique_ptr<Task> > tasks;
+
+//    std::list<std::unique_ptr<Scenario> > tasks;
+//    std::vector<size_t> tasksMaxBetaAgent;
+
     size_t maxStep;
     bool boundFlag;
     bool sortFlag;
