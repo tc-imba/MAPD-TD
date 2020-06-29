@@ -218,7 +218,7 @@ void Manager::selectTask(Map *map) {
         }
     }
 
-    if (selectedTask >= 0) {
+    if (selectedTask < tasks.size()) {
         auto selectedAgent = tasks[selectedTask]->maxBetaAgent;
         auto &flex = agents[selectedAgent].flexibility[selectedTask];
         std::cout << "agent: " << selectedAgent << ", task: "
@@ -456,15 +456,17 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
                         beta -= (double) (agentLeaveTime + pathLength);
                     }
                     agents[i].flexibility[j] = Flexibility{beta, path, task.get(), deliveryOccupiedAgent};
-                    if (beta > 0 && boundFlag) {
-                        if (minBeta > 0 && beta >= minBeta) {
-                            skipFlag = true;
+                    if (beta > 0) {
+                        if (boundFlag) {
+                            if (minBeta > 0 && beta >= minBeta) {
+                                skipFlag = true;
+                            }
+                            upperBound = std::min(upperBound, (size_t) (deadline - beta + 1));
                         }
                         if (beta > taskMaxBeta) {
                             taskMaxBeta = beta;
                             taskMaxAgent = i;
                         }
-                        upperBound = std::min(upperBound, (size_t) (deadline - beta + 1));
                     }
                 }
             }
