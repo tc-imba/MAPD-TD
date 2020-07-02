@@ -180,3 +180,12 @@ void Map::printOccupiedMap() const {
         std::cout << std::endl;
     }
 }
+
+size_t Map::getDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end) {
+    size_t distance = 0;
+    if (start.first > end.first) distance += start.first - end.first;
+    else distance += end.first - start.first;
+    if (start.second > end.second) distance += start.second - end.second;
+    else distance += end.second - start.second;
+    return distance;
+}

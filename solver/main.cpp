@@ -22,23 +22,24 @@ int main(int argc, const char *argv[]) {
     optionParser.add("task/well-formed-21-35-10-2.task", false, 1, 0, "Task", "-t", "--task");
     optionParser.add("", false, 1, 0, "Output File", "-o", "--output");
 
-    ez::ezOptionValidator validPhi("d", "ge", "0");
-    optionParser.add("1", false, 1, 0, "Phi", "--phi", &validPhi);
+    auto validPhi = new ez::ezOptionValidator("d", "ge", "0");
+    optionParser.add("1", false, 1, 0, "Phi", "--phi", validPhi);
 
-    ez::ezOptionValidator validAlgorithm("s1", "gele", "0,1");
-    optionParser.add("0", false, 1, 0, "Algorithm", "-a", "--algorithm", &validAlgorithm);
+    auto validAlgorithm = new ez::ezOptionValidator("s1", "gele", "0,1");
+    optionParser.add("0", false, 1, 0, "Algorithm", "-a", "--algorithm", validAlgorithm);
 
-    ez::ezOptionValidator validMaxStep("u4");
-    optionParser.add("100000", false, 1, 0, "Max Step", "--max-step", &validMaxStep);
+    auto validMaxStep = new ez::ezOptionValidator("u4");
+    optionParser.add("100000", false, 1, 0, "Max Step", "--max-step", validMaxStep);
 
     optionParser.add("", false, 0, 0, "Use Branch and Bound", "-b", "--bound");
     optionParser.add("", false, 0, 0, "Use Sort", "-s", "--sort");
+    optionParser.add("", false, 0, 0, "Use Multi Label", "-m", "--mlabel");
     optionParser.parse(argc, argv);
 
     std::string dataPath, taskFile, outputFile;
     double phi;
     int algorithmId;
-    bool boundFlag, sortFlag;
+    bool boundFlag, sortFlag, multiLabelFlag;
     size_t maxStep;
 
     optionParser.get("--data")->getString(dataPath);
@@ -49,6 +50,7 @@ int main(int argc, const char *argv[]) {
     optionParser.get("--max-step")->getULongLong(maxStep);
     boundFlag = optionParser.isSet("--bound");
     sortFlag = optionParser.isSet("--sort");
+    multiLabelFlag = optionParser.isSet("--mlabel");
 
     auto coutBuf = std::cout.rdbuf();
     std::ofstream fout;
@@ -57,7 +59,7 @@ int main(int argc, const char *argv[]) {
         std::cout.rdbuf(fout.rdbuf());
     }
 
-    Manager manager(dataPath, maxStep, boundFlag, sortFlag, true);
+    Manager manager(dataPath, maxStep, boundFlag, sortFlag, multiLabelFlag, true);
     auto map = manager.loadTaskFile(taskFile);
     manager.leastFlexFirstAssign(map, algorithmId, phi);
 

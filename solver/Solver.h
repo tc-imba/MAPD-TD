@@ -24,6 +24,7 @@ public:
         size_t estimateTime;            // h_v + g(v), estimated by manhattan distance
         VirtualNode *parent;            // v_p
         std::pair<size_t, size_t> child;// v_c
+        size_t checkpoint;
         bool hasChild;
         bool isOpen;
     };
@@ -84,12 +85,13 @@ public:
 
 private:
 
-    size_t getDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
-
-    VirtualNode *createVirtualNode(std::pair<size_t, size_t> pos, size_t leaveTime, VirtualNode *parent, bool isOpen);
+//    size_t getDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
 
     VirtualNode *createVirtualNode(std::pair<size_t, size_t> pos, size_t leaveTime, VirtualNode *parent,
-                                   std::pair<size_t, size_t> child, bool isOpen);
+                                   size_t checkpoint, bool isOpen);
+
+    VirtualNode *createVirtualNode(std::pair<size_t, size_t> pos, size_t leaveTime, VirtualNode *parent,
+                                   size_t checkpoint, std::pair<size_t, size_t> child, bool isOpen, bool hasChild = true);
 
     VirtualNode *removeVirtualNodeFromList(std::multimap<size_t, VirtualNode *> &list,
                                            std::multimap<size_t, VirtualNode *>::iterator it,
@@ -110,7 +112,7 @@ public:
     ~Solver();
 
     void initScenario(const Scenario *scenario, size_t startTime = 0,
-            size_t deadline = std::numeric_limits<std::size_t>::max() / 2);
+                      size_t deadline = std::numeric_limits<std::size_t>::max() / 2);
 
     bool success() { return successNode != nullptr; };
 

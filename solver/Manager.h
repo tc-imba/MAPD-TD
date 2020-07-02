@@ -65,6 +65,7 @@ private:
     size_t maxStep;
     bool boundFlag;
     bool sortFlag;
+    bool multiLabelFlag;
     bool occupiedFlag;
 
     void computeFlex(Solver &solver, int x, double phi);
@@ -84,7 +85,8 @@ private:
 
 public:
     explicit Manager(std::string dataPath, size_t maxStep = 10000,
-                     bool boundFlag = true, bool sortFlag = true, bool occupiedFlag = true);
+                     bool boundFlag = true, bool sortFlag = true,
+                     bool multiLabelFlag = true, bool occupiedFlag = true);
 
     Map *getMap(const std::string &mapName);
 

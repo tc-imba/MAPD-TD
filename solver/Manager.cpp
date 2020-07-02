@@ -12,9 +12,10 @@
 #include <chrono>
 
 Manager::Manager(std::string dataPath, size_t maxStep,
-                 bool boundFlag, bool sortFlag, bool occupiedFlag)
+                 bool boundFlag, bool sortFlag, bool multiLabelFlag, bool occupiedFlag)
         : dataPath(std::move(dataPath)), maxStep(maxStep),
-          boundFlag(boundFlag), sortFlag(sortFlag), occupiedFlag(occupiedFlag) {}
+          boundFlag(boundFlag), sortFlag(sortFlag),
+          multiLabelFlag(multiLabelFlag), occupiedFlag(occupiedFlag) {}
 
 Map *Manager::loadMapFile(const std::string &mapName) {
     auto filePath = dataPath + "/map/" + mapName;
@@ -126,8 +127,6 @@ void Manager::leastFlexFirstAssign(Map *map, int algorithm, double phi) {
     while (!tasks.empty()) {
         computeFlex(solver, 1, phi);
         selectTask(map);
-//        exit(0);
-//        break;
     }
 
     auto end = std::chrono::system_clock::now();
@@ -251,8 +250,12 @@ void Manager::selectTask(Map *map) {
 
 std::pair<size_t, size_t> Manager::computePath(Solver &solver, std::vector<PathNode> &path,
                                                Scenario *task, size_t startTime, size_t deadline) {
-    solver.initScenario(task, startTime, deadline);
     size_t count = 0;
+    // skip if not possible to succeed
+    if (startTime + task->getDistance() > deadline) {
+        return std::make_pair(0, count);
+    }
+    solver.initScenario(task, startTime, deadline);
     while (!solver.success() && solver.step() && count < maxStep) {
         ++count;
     }
@@ -433,11 +436,58 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
 //            auto &upperBound = upperBounds[j];
 
 
+            size_t agentEndTime = 0;
 
-            // agent go to task start position
-            auto task1 = Scenario(i, map, agents[i].currentPos, task->scenario.getStart(), 0);
+            if (multiLabelFlag) {
+                std::vector<std::pair<size_t, size_t> > positions = {
+                        agents[i].currentPos, task->scenario.getStart(), task->scenario.getEnd()
+                };
+                auto scenario = Scenario(i, map, positions, 0);
+                auto scenarioPath = computePath(solver, path, &scenario, agentLeaveTime, upperBound);
+
+                agentEndTime = scenarioPath.first;
+                stepCount += scenarioPath.second;
+            } else {
+                // agent go to task start position
+                auto scenario = Scenario(i, map, agents[i].currentPos, task->scenario.getStart(), 0);
+                auto scenarioPath = computePath(solver, path, &scenario, agentLeaveTime, upperBound);
+
+                auto agentStartTime = scenarioPath.first;
+                stepCount += scenarioPath.second;
+                if (agentStartTime == 0) {
+                    agents[i].flexibility[j] = Flexibility{-1, path, task.get(), deliveryOccupiedAgent};
+                } else {
+                    scenarioPath = computePath(solver, path, &task->scenario, agentStartTime, upperBound);
+                    agentEndTime = scenarioPath.first;
+                    stepCount += scenarioPath.second;
+                }
+            }
+
+            if (agentEndTime == 0) {
+                agents[i].flexibility[j] = Flexibility{-1, path, task.get(), deliveryOccupiedAgent};
+            } else {
+                size_t pathLength = agentEndTime - agentLeaveTime;
+                double beta = deadline;
+                if (x == 1) {
+                    beta -= (double) (agentLeaveTime + pathLength);
+                }
+                agents[i].flexibility[j] = Flexibility{beta, path, task.get(), deliveryOccupiedAgent};
+                if (beta > 0) {
+                    if (boundFlag) {
+                        if (minBeta > 0 && beta >= minBeta) {
+                            skipFlag = true;
+                        }
+                        upperBound = std::min(upperBound, (size_t) (deadline - beta + 1));
+                    }
+                    if (beta > taskMaxBeta) {
+                        taskMaxBeta = beta;
+                        taskMaxAgent = i;
+                    }
+                }
+            }
+
+            /*auto task1 = Scenario(i, map, agents[i].currentPos, task->scenario.getStart(), 0);
             auto path1 = computePath(solver, path, &task1, agentLeaveTime, upperBound);
-
 
             auto agentStartTime = path1.first;
             stepCount += path1.second;
@@ -469,7 +519,7 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
                         }
                     }
                 }
-            }
+            }*/
 
             // add back node constraint for parking location of the current agent
             map->addNodeOccupied(agents[i].currentPos, agentLeaveTime, std::numeric_limits<size_t>::max() / 2);

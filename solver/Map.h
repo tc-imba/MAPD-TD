@@ -75,6 +75,8 @@ public:
     auto &getOccupiedMap() const { return this->occupiedMap; };
 
     void printOccupiedMap() const;
+
+    static size_t getDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
 };
 
 
