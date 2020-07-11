@@ -51,6 +51,12 @@ public:
         explicit Agent(std::pair<size_t, size_t> pos) : originPos(pos), currentPos(pos) {}
     };
 
+    struct Count {
+        size_t step = 0;
+        size_t skip = 0;
+        size_t calculate = 0;
+    };
+
 private:
     std::string dataPath;
     std::unordered_map<std::string, std::unique_ptr<Map> > maps;
@@ -81,6 +87,9 @@ private:
     std::pair<size_t, size_t> computePath(Solver &solver, std::vector<PathNode> &path, Scenario *task,
                                           size_t startTime, size_t deadline);
 
+    size_t computeAgentForTask(Solver &solver, size_t j, const std::vector<std::pair<size_t, double> > &sortAgent,
+                               double phi, double &minBeta, Count& count);
+
     bool isPathConflict(Solver &solver, Agent &agent, const std::vector<PathNode> &vector);
 
 public:
@@ -97,6 +106,8 @@ public:
     Map *loadTaskFile(const std::string &filename);
 
     void leastFlexFirstAssign(Map *map, int algorithm, double phi);
+
+    void earliestDeadlineFirstAssign(Map *map, int algorithm, double phi);
 };
 
 
