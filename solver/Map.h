@@ -40,12 +40,17 @@ public:
         }
     };
 
+    struct OccupiedValue {
+        std::map<size_t, size_t> rangeConstraints;
+        std::map<size_t, size_t> waitingAgents;
+    };
+
 private:
     size_t height = 0, width = 0;
     std::string type;
     std::vector<std::vector<char> > map;
 
-    std::unordered_map<OccupiedKey, std::unique_ptr<std::map<size_t, size_t> >, OccupiedKeyHash, OccupiedKeyEqual> occupiedMap;
+    std::unordered_map<OccupiedKey, std::unique_ptr<OccupiedValue>, OccupiedKeyHash, OccupiedKeyEqual> occupiedMap;
 
 
     template<typename T>
@@ -69,6 +74,12 @@ public:
     void removeNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime);
 
     void addEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime, size_t endTime);
+
+    void addWaitingAgent(std::pair<size_t, size_t> pos, size_t startTime, size_t agent);
+
+    void removeWaitingAgent(std::pair<size_t, size_t> pos, size_t startTime, size_t agent);
+
+    size_t getLastWaitingAgent(std::pair<size_t, size_t> pos);
 
     bool loadConstraints(const std::string &filename);
 

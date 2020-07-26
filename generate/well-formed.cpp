@@ -107,17 +107,19 @@ int main() {
         size_t dist = 0;
         for (size_t j = 0; j < k; j++) {
             auto evenPoint = taskPoints[sampleTask(g)];
-            auto scenario = Scenario(i, map, firstPoint, evenPoint, 0);
+            auto scenario = Scenario(i, map, firstPoint, evenPoint, 0, 0);
             solver.initScenario(&scenario);
             dist += calculateDistance(solver);
 
             auto oddPoint = taskPoints[sampleTask(g)];
-            scenario = Scenario(i, map, evenPoint, oddPoint, 0);
+            scenario = Scenario(i, map, evenPoint, oddPoint, 0, 0);
             solver.initScenario(&scenario);
             dist += calculateDistance(solver);
 
+            int startTime = 0;
+
             taskConfigs << evenPoint.first << " " << evenPoint.second << " "
-                        << oddPoint.first << " " << oddPoint.second << " " << dist << endl;
+                        << oddPoint.first << " " << oddPoint.second << " " << dist << " " << startTime <<  endl;
 
             firstPoint = oddPoint;
         }

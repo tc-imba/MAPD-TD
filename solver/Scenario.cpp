@@ -16,13 +16,13 @@ void Scenario::initDistances() {
 }
 
 Scenario::Scenario(
-        size_t bucket, Map *map, std::pair<size_t, size_t> start, std::pair<size_t, size_t> end, double optimal
-) : bucket(bucket), map(map), optimal(optimal), positions({start, end}) {
+        size_t bucket, Map *map, std::pair<size_t, size_t> start, std::pair<size_t, size_t> end, double optimal, size_t startTime
+) : bucket(bucket), map(map), optimal(optimal), positions({start, end}), startTime(startTime) {
     initDistances();
 }
 
-Scenario::Scenario(size_t bucket, Map *map, std::vector<std::pair<size_t, size_t>> positions, double optimal)
-        : bucket(bucket), map(map), optimal(optimal), positions(std::move(positions)) {
+Scenario::Scenario(size_t bucket, Map *map, std::vector<std::pair<size_t, size_t>> positions, double optimal, size_t startTime)
+        : bucket(bucket), map(map), optimal(optimal), positions(std::move(positions)), startTime(startTime) {
     assert(this->positions.size() >= 2);
     initDistances();
 }

@@ -42,13 +42,14 @@ public:
     };
 
     struct Agent {
-        std::pair<size_t, size_t> originPos, currentPos;
+        std::pair<size_t, size_t> originPos, currentPos, waitingPos;
         std::vector<std::unique_ptr<Task> > tasks;
-        size_t lastTimeStamp = 0;
+        size_t lastTimeStamp = 0, waitingTimeStamp = 0;
         std::vector<PathNode> path;
+        std::vector<PathNode> reservedPath;
         std::vector<Flexibility> flexibility;
 
-        explicit Agent(std::pair<size_t, size_t> pos) : originPos(pos), currentPos(pos) {}
+        explicit Agent(std::pair<size_t, size_t> pos) : originPos(pos), currentPos(pos), waitingPos(pos) {}
     };
 
     struct Count {
@@ -74,15 +75,19 @@ private:
     bool multiLabelFlag;
     bool occupiedFlag;
 
+    void applyReservedPath();
+
     void computeFlex(Solver &solver, int x, double phi);
 
-    void selectTask(Map *map);
+    void selectTask(Solver &solver);
 
-    void assignTask(Map *map, Agent &agent, std::vector<PathNode> &vector);
+    void assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector, size_t occupiedAgent);
 
     std::vector<Constraint> generateConstraints(Map *map, Agent &agent, const std::vector<PathNode> &vector);
 
     Map *loadMapFile(const std::string &filename);
+
+    bool reservePath(Solver &solver, size_t i);
 
     std::pair<size_t, size_t> computePath(Solver &solver, std::vector<PathNode> &path, Scenario *task,
                                           size_t startTime, size_t deadline);

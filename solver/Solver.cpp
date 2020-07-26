@@ -176,16 +176,16 @@ void Solver::initialize() {
     }
     for (const auto &item: map->getOccupiedMap()) {
         if (item.first.direction == Map::Direction::NONE) {
-            nodes[item.first.pos.first][item.first.pos.second].occupied = item.second.get();
+            nodes[item.first.pos.first][item.first.pos.second].occupied = &item.second->rangeConstraints;
         } else {
             auto &node1 = nodes[item.first.pos.first][item.first.pos.second];
             auto dir1 = (size_t) item.first.direction;
-            node1.edges[dir1].occupied = item.second.get();
+            node1.edges[dir1].occupied = &item.second->rangeConstraints;
             auto p = map->getPosByDirection(item.first.pos, item.first.direction);
             if (p.first) {
                 auto &node2 = nodes[p.second.first][p.second.second];
                 auto dir2 = (dir1 + 2) % 4;
-                node2.edges[dir2].occupied = item.second.get();
+                node2.edges[dir2].occupied = &item.second->rangeConstraints;
             }
         }
     }

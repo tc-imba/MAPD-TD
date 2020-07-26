@@ -93,7 +93,7 @@ void Map::removeNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime) {
     OccupiedKey key = {pos, Map::Direction::NONE};
     auto it = occupiedMap.find(key);
     if (it != occupiedMap.end()) {
-        auto occupied = it->second.get();
+        auto occupied = &it->second->rangeConstraints;
         auto it2 = occupied->rbegin();
         if (it2->second >= startTime) {
             if (it2->first == startTime) {
@@ -119,11 +119,11 @@ void Map::addEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction directio
     OccupiedKey key = {pos, direction};
     auto it = occupiedMap.find(key);
     if (it == occupiedMap.end()) {
-        auto occupied = std::make_unique<std::map<size_t, size_t>>();
-        occupied->emplace(startTime, endTime);
+        auto occupied = std::make_unique<OccupiedValue>();
+        occupied->rangeConstraints.emplace(startTime, endTime);
         occupiedMap.emplace_hint(it, key, std::move(occupied));
     } else {
-        auto occupied = it->second.get();
+        auto occupied = &it->second->rangeConstraints;
         auto it2 = occupied->upper_bound(startTime);
         if (it2 != occupied->begin()) --it2;
         // it2->startTime = it2->first
@@ -140,6 +140,71 @@ void Map::addEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction directio
         occupied->emplace(startTime, endTime - startTime);
     }
 }
+
+void Map::addWaitingAgent(std::pair<size_t, size_t> pos, size_t startTime, size_t agent) {
+    OccupiedKey key = {pos, Map::Direction::NONE};
+    auto it = occupiedMap.find(key);
+    if (it == occupiedMap.end()) {
+        auto occupied = std::make_unique<OccupiedValue>();
+        it = occupiedMap.emplace_hint(it, key, std::move(occupied));
+    }
+    auto &waitingAgents = it->second->waitingAgents;
+    auto it2 = waitingAgents.find(startTime);
+    if (it2 == waitingAgents.end()) {
+        it2 = waitingAgents.emplace_hint(it2, startTime, agent);
+        // update node constraint
+        if (++it2 == waitingAgents.end()) {
+            if (waitingAgents.size() > 1) {
+                auto it3 = ++waitingAgents.rbegin();
+                removeNodeOccupied(pos, it3->first + 1);
+            }
+            addNodeOccupied(pos, startTime, std::numeric_limits<size_t>::max() / 2);
+        }
+    } else {
+        std::cerr << "warning: adding duplicate waiting agent" << std::endl;
+    }
+}
+
+void Map::removeWaitingAgent(std::pair<size_t, size_t> pos, size_t startTime, size_t agent) {
+    OccupiedKey key = {pos, Map::Direction::NONE};
+    auto it = occupiedMap.find(key);
+    if (it == occupiedMap.end()) {
+        std::cerr << "warning: removing non-exist waiting agent" << std::endl;
+        return;
+    }
+    auto &waitingAgents = it->second->waitingAgents;
+    auto it2 = waitingAgents.find(startTime);
+    if (it2 == waitingAgents.end()) {
+        std::cerr << "warning: removing non-exist waiting agent" << std::endl;
+    } else if (it2->second != agent) {
+        std::cerr << "warning: removing wrong waiting agent" << std::endl;
+    } else {
+        it2 = waitingAgents.erase(it2);
+        // update node constraint
+        if (it2 == waitingAgents.end()) {
+            removeNodeOccupied(pos, startTime + 1);
+            if (!waitingAgents.empty()) {
+                auto it3 = waitingAgents.rbegin();
+                addNodeOccupied(pos, it3->first, std::numeric_limits<size_t>::max() / 2);
+            }
+        }
+    }
+}
+
+size_t Map::getLastWaitingAgent(std::pair<size_t, size_t> pos) {
+    constexpr size_t noAgent = std::numeric_limits<size_t>::max() / 2;
+    OccupiedKey key = {pos, Map::Direction::NONE};
+    auto it = occupiedMap.find(key);
+    if (it == occupiedMap.end()) {
+        return noAgent;
+    }
+    auto &waitingAgents = it->second->waitingAgents;
+    if (waitingAgents.empty()) {
+        return noAgent;
+    }
+    return waitingAgents.rbegin()->second;
+}
+
 
 bool Map::loadConstraints(const std::string &filename) {
     std::ifstream fin(filename);
@@ -174,7 +239,7 @@ Map::Direction Map::getDirectionByPos(std::pair<size_t, size_t> pos1, std::pair<
 void Map::printOccupiedMap() const {
     for (auto it = occupiedMap.begin(); it != occupiedMap.end(); ++it) {
         std::cout << it->first.pos.first << " " << it->first.pos.second << " " << (int) it->first.direction << ": ";
-        for (auto item : *(it->second.get())) {
+        for (auto item : it->second->rangeConstraints) {
             std::cout << "[" << item.first << "," << item.second << ") ";
         }
         std::cout << std::endl;

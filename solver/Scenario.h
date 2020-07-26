@@ -18,13 +18,14 @@ private:
     std::vector<std::pair<size_t, size_t> > positions;
     std::vector<size_t> distances;
     double optimal;
+    size_t startTime;
 
     void initDistances();
 
 public:
-    Scenario(size_t bucket, Map *map, std::pair<size_t, size_t> start, std::pair<size_t, size_t> end, double optimal);
+    Scenario(size_t bucket, Map *map, std::pair<size_t, size_t> start, std::pair<size_t, size_t> end, double optimal, size_t startTime);
 
-    Scenario(size_t bucket, Map *map, std::vector<std::pair<size_t, size_t> > positions, double optimal);
+    Scenario(size_t bucket, Map *map, std::vector<std::pair<size_t, size_t> > positions, double optimal, size_t startTime);
 
     auto getBucket() const { return this->bucket; };
 
