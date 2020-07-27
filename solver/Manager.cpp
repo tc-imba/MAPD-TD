@@ -61,7 +61,7 @@ void Manager::loadScenarioFile(const std::string &filename) {
         if (map->getHeight() != height || map->getWidth() != width) {
             throw std::runtime_error("scenario map size error");
         }
-        auto scenario = std::make_unique<Scenario>(bucket, map, start, end, optimal);
+        auto scenario = std::make_unique<Scenario>(bucket, map, start, end, optimal, 0);
         this->scenarios.emplace_back(std::move(scenario));
     }
 
@@ -273,14 +273,14 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
             std::vector<std::pair<size_t, size_t> > positions = {
                     agents[i].currentPos, task->scenario.getStart(), task->scenario.getEnd()
             };
-            auto scenario = Scenario(i, map, positions, 0);
+            auto scenario = Scenario(i, map, positions, 0, 0);
             auto scenarioPath = computePath(solver, path, &scenario, agentLeaveTime, upperBound);
 
             agentEndTime = scenarioPath.first;
             count.step += scenarioPath.second;
         } else {
             // agent go to task start position
-            auto scenario = Scenario(i, map, agents[i].currentPos, task->scenario.getStart(), 0);
+            auto scenario = Scenario(i, map, agents[i].currentPos, task->scenario.getStart(), 0, 0);
             auto scenarioPath = computePath(solver, path, &scenario, agentLeaveTime, upperBound);
 
             auto agentStartTime = scenarioPath.first;
@@ -503,7 +503,7 @@ void Manager::selectTask(Solver &solver) {
 bool Manager::reservePath(Solver &solver, size_t i) {
     auto map = solver.getMap();
     auto &agent = agents[i];
-    Scenario task(0, map, agent.currentPos, agent.originPos, 0);
+    Scenario task(0, map, agent.currentPos, agent.originPos, 0, 0);
     std::vector<PathNode> path;
     auto result = computePath(solver, path, &task, agent.lastTimeStamp, std::numeric_limits<size_t>::max() / 2);
     if (result.first == 0) {

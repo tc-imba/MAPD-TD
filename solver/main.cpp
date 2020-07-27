@@ -37,7 +37,7 @@ int main(int argc, const char *argv[]) {
 
 
     optionParser.add("test-benchmark", false, 1, 0, "Data Path", "-d", "--data");
-    optionParser.add("task/well-formed-21-35-20-2.task", false, 1, 0, "Task", "-t", "--task");
+    optionParser.add("task/well-formed-21-35-10-2.task", false, 1, 0, "Task", "-t", "--task");
     optionParser.add("", false, 1, 0, "Output File", "-o", "--output");
     optionParser.add("flex", false, 1, 0, "Scheduler (flex/edf)", "--scheduler");
 
@@ -59,7 +59,7 @@ int main(int argc, const char *argv[]) {
     double phi;
     int algorithmId;
     bool boundFlag, sortFlag, multiLabelFlag;
-    size_t maxStep;
+    unsigned long long maxStep;
 
     optionParser.get("--data")->getString(dataPath);
     optionParser.get("--task")->getString(taskFile);

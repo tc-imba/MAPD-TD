@@ -376,9 +376,9 @@ Solver::VirtualNode *Solver::step() {
                 auto &neighborNode = nodes[p.second.first][p.second.second];
                 if (vNode->parent && p.second == vNode->parent->pos) continue; // v_n=v_p
 
-                if (logging && p.second.first == 9 && p.second.second == 25) {
-                    std::cerr << "debug" << std::endl;
-                }
+//                if (logging && p.second.first == 9 && p.second.second == 25) {
+//                    std::cerr << "debug" << std::endl;
+//                }
 
                 auto newTime = findFirstNotOccupiedTimestamp(edge.occupied, neighborNode.occupied, vNode->leaveTime, 1);
                 auto waitInterval = findNotOccupiedInterval(node.occupied, vNode->leaveTime, newTime);
@@ -404,6 +404,11 @@ Solver::VirtualNode *Solver::step() {
                     auto newTime = findFirstNotOccupiedTimestamp(edge.occupied, neighborNode.occupied, it2->first, 1);
                     auto waitInterval = findNotOccupiedInterval(node.occupied, vNode->leaveTime, newTime);
 //                    std::cout << vNode->leaveTime << " " << it2->first << " " << newTime << std::endl;
+
+                    if (logging) {
+                        std::cout << vNode->pos.first << " " << vNode->pos.second << " " << vNode->leaveTime << " -> "
+                                  << vNode->pos.first << " " << vNode->pos.second << " " << newTime << std::endl;
+                    }
 
                     if (newTime < std::numeric_limits<size_t>::max() / 2 && waitInterval.first < waitInterval.second) {
                         auto newNode = createVirtualNode(vNode->pos, newTime, vNode->parent, vNode->checkpoint, vNode->child, true);

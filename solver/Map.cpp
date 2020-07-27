@@ -156,7 +156,7 @@ void Map::addWaitingAgent(std::pair<size_t, size_t> pos, size_t startTime, size_
         if (++it2 == waitingAgents.end()) {
             if (waitingAgents.size() > 1) {
                 auto it3 = ++waitingAgents.rbegin();
-                removeNodeOccupied(pos, it3->first + 1);
+                removeNodeOccupied(pos, it3->first);
             }
             addNodeOccupied(pos, startTime, std::numeric_limits<size_t>::max() / 2);
         }
@@ -182,7 +182,7 @@ void Map::removeWaitingAgent(std::pair<size_t, size_t> pos, size_t startTime, si
         it2 = waitingAgents.erase(it2);
         // update node constraint
         if (it2 == waitingAgents.end()) {
-            removeNodeOccupied(pos, startTime + 1);
+            removeNodeOccupied(pos, startTime);
             if (!waitingAgents.empty()) {
                 auto it3 = waitingAgents.rbegin();
                 addNodeOccupied(pos, it3->first, std::numeric_limits<size_t>::max() / 2);

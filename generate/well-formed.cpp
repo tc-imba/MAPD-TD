@@ -62,7 +62,7 @@ int main() {
 
     string mapName = generateMap(dataPath, deliveryWidth, deliveryX, deliveryY, maxX, maxY);
 
-    size_t agentNum = 10;
+    size_t agentNum = 20;
     size_t k = 2;
     ofstream fout(dataPath + "/task/" + mapName + "-" + to_string(agentNum) + "-" + to_string(k) + ".task");
 
