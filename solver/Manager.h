@@ -42,14 +42,14 @@ public:
     };
 
     struct Agent {
-        std::pair<size_t, size_t> originPos, currentPos, waitingPos;
+        std::pair<size_t, size_t> originPos, currentPos;
         std::vector<std::unique_ptr<Task> > tasks;
-        size_t lastTimeStamp = 0, waitingTimeStamp = 0;
+        size_t lastTimeStamp = 0;
         std::vector<PathNode> path;
         std::vector<PathNode> reservedPath;
         std::vector<Flexibility> flexibility;
 
-        explicit Agent(std::pair<size_t, size_t> pos) : originPos(pos), currentPos(pos), waitingPos(pos) {}
+        explicit Agent(std::pair<size_t, size_t> pos) : originPos(pos), currentPos(pos) {}
     };
 
     struct Count {
@@ -84,6 +84,10 @@ private:
     void assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector, size_t occupiedAgent);
 
     std::vector<Constraint> generateConstraints(Map *map, Agent &agent, const std::vector<PathNode> &vector);
+
+    void addAgentPathConstraints(Map *map, Agent &agent, const std::vector<PathNode> &vector);
+
+    void removeAgentPathConstraints(Map *map, Agent &agent, const std::vector<PathNode> &vector);
 
     Map *loadMapFile(const std::string &filename);
 

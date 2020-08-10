@@ -89,25 +89,55 @@ void Map::addNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, size_
     addEdgeOccupied(pos, Map::Direction::NONE, startTime, endTime);
 }
 
-void Map::removeNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime) {
+void Map::removeNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, size_t endTime) {
+    removeEdgeOccupied(pos, Map::Direction::NONE, startTime, endTime);
+}
+
+size_t Map::addInfiniteWaiting(std::pair<size_t, size_t> pos, size_t startTime) {
     OccupiedKey key = {pos, Map::Direction::NONE};
-    auto it = occupiedMap.find(key);
-    if (it != occupiedMap.end()) {
-        auto occupied = &it->second->rangeConstraints;
-        auto it2 = occupied->rbegin();
-        if (it2->second >= startTime) {
-            if (it2->first == startTime) {
-//                std::cout << "remove [" << it2->first << ", " << it2->second << ")" << std::endl;
-                occupied->erase(it2->first);
-            } else if (it2->first < startTime) {
-                it2->second = startTime;
-//                std::cout << "changed [" << it2->first << ", " << it2->second << ")" << std::endl;
+    size_t infinite = std::numeric_limits<size_t>::max() / 2;
+    if (startTime == 0) {
+        auto it = occupiedMap.find(key);
+        if (it != occupiedMap.end()) {
+            auto occupied = &it->second->rangeConstraints;
+            if (!occupied->empty()) {
+                auto it2 = --occupied->end();
+                if (it2->second < infinite) {
+                    occupied->emplace(it2->second + 1, infinite);
+                    return it2->second + 1;
+                }
             }
         }
     }
+    addNodeOccupied(pos, startTime, infinite);
+    return startTime;
+}
+
+size_t Map::removeInfiniteWaiting(std::pair<size_t, size_t> pos) {
+    OccupiedKey key = {pos, Map::Direction::NONE};
+    size_t infinite = std::numeric_limits<size_t>::max() / 2;
+    auto it = occupiedMap.find(key);
+    if (it != occupiedMap.end()) {
+        auto occupied = &it->second->rangeConstraints;
+        if (!occupied->empty()) {
+            auto it2 = --occupied->end();
+            if (it2->second >= infinite) {
+                size_t result = it2->first;
+                occupied->erase(it2);
+                return result;
+            }
+        }
+    }
+    return infinite;
 }
 
 void Map::addEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime, size_t endTime) {
+    if (endTime <= startTime) return;
+
+//    if (pos.first == 15 && pos.second == 20 && startTime == 44) {
+//        std::cerr << startTime << " " << endTime << std::endl;
+//    }
+
     if (direction == Map::Direction::LEFT) {
         pos = getPosByDirection(pos, direction).second;
         direction = Map::Direction::RIGHT;
@@ -125,20 +155,83 @@ void Map::addEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction directio
     } else {
         auto occupied = &it->second->rangeConstraints;
         auto it2 = occupied->upper_bound(startTime);
-        if (it2 != occupied->begin()) --it2;
+        if (!occupied->empty() && it2 != occupied->begin()) --it2;
         // it2->startTime = it2->first
         // it2->endTime = it2->second
         while (it2 != occupied->end()) {
-            if (it2->first <= endTime || startTime <= it2->second) {
+            if (it2->first < endTime && startTime < it2->second) {
+                std::cerr << pos.first << " " << pos.second << " " << (int) direction << ": ";
+                printOccupied(occupied);
+                std::cerr << std::endl << startTime << " " << endTime << std::endl;
+//                exit(0);
+            }
+            /*if (pos.first == 9 && pos.second == 19 && direction == Map::Direction::NONE) {
+                std::cerr << pos.first << " " << pos.second << " " << (int) direction << ": ";
+                std::cerr << std::endl << startTime << " " << endTime << std::endl
+                          << it2->first << " " << it2->second << std::endl;
+                printOccupied(occupied);
+            }*/
+            if (it2->first <= endTime && startTime <= it2->second) {
                 endTime = std::max(it2->second, endTime);
                 startTime = std::min(it2->first, startTime);
                 it2 = occupied->erase(it2);
-            } else if (startTime > it2->second) {
+                if (it2 != occupied->end() && it2->first == endTime) {
+                    endTime = it2->second;
+                    it2 = occupied->erase(it2);
+                }
+            } else if (it2->first > endTime) {
                 break;
+            } else {
+                ++it2;
             }
         }
-        occupied->emplace(startTime, endTime - startTime);
+        occupied->emplace(startTime, endTime);
+//        std::cerr << pos.first << " " << pos.second << " " << (int) direction << " ";
+//        printOccupied(occupied);
+//        std::cerr << std::endl;
     }
+}
+
+void Map::removeEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime,
+                             size_t endTime) {
+    if (endTime <= startTime) return;
+
+//    if (pos.first == 15 && pos.second == 20 && startTime == 44) {
+//        std::cerr << startTime << " " << endTime << std::endl;
+//    }
+
+    if (direction == Map::Direction::LEFT) {
+        pos = getPosByDirection(pos, direction).second;
+        direction = Map::Direction::RIGHT;
+    } else if (direction == Map::Direction::UP) {
+        pos = getPosByDirection(pos, direction).second;
+        direction = Map::Direction::DOWN;
+    }
+
+    OccupiedKey key = {pos, direction};
+
+    auto it = occupiedMap.find(key);
+    if (it != occupiedMap.end()) {
+        auto occupied = &it->second->rangeConstraints;
+        auto it2 = occupied->upper_bound(startTime);
+        if (!occupied->empty() && it2 != occupied->begin()) --it2;
+        if (it2 != occupied->end() && it2->first <= startTime && it2->second >= endTime) {
+            auto pair = *it2;
+            occupied->erase(it2);
+            if (pair.first != startTime) {
+                occupied->emplace(pair.first, startTime);
+            }
+            if (pair.second != endTime) {
+                occupied->emplace(endTime, pair.second);
+            }
+            return;
+        }
+        std::cerr << pos.first << " " << pos.second << " " << (int) direction << ": ";
+        printOccupied(occupied);
+        std::cerr << std::endl << startTime << " " << endTime << std::endl;
+    }
+    exit(0);
+//    throw std::runtime_error("remove error");
 }
 
 void Map::addWaitingAgent(std::pair<size_t, size_t> pos, size_t startTime, size_t agent) {
@@ -153,14 +246,15 @@ void Map::addWaitingAgent(std::pair<size_t, size_t> pos, size_t startTime, size_
     if (it2 == waitingAgents.end()) {
         it2 = waitingAgents.emplace_hint(it2, startTime, agent);
         // update node constraint
-        if (++it2 == waitingAgents.end()) {
-            if (waitingAgents.size() > 1) {
-                auto it3 = ++waitingAgents.rbegin();
-                removeNodeOccupied(pos, it3->first);
-            }
-            addNodeOccupied(pos, startTime, std::numeric_limits<size_t>::max() / 2);
-        }
+//        if (++it2 == waitingAgents.end()) {
+//            if (waitingAgents.size() > 1) {
+//                auto it3 = ++waitingAgents.rbegin();
+//                removeNodeOccupied(pos, it3->first);
+//            }
+//            addNodeOccupied(pos, startTime, std::numeric_limits<size_t>::max() / 2);
+//        }
     } else {
+        printOccupied(&waitingAgents);
         std::cerr << "warning: adding duplicate waiting agent" << std::endl;
     }
 }
@@ -181,13 +275,13 @@ void Map::removeWaitingAgent(std::pair<size_t, size_t> pos, size_t startTime, si
     } else {
         it2 = waitingAgents.erase(it2);
         // update node constraint
-        if (it2 == waitingAgents.end()) {
-            removeNodeOccupied(pos, startTime);
-            if (!waitingAgents.empty()) {
-                auto it3 = waitingAgents.rbegin();
-                addNodeOccupied(pos, it3->first, std::numeric_limits<size_t>::max() / 2);
-            }
-        }
+//        if (it2 == waitingAgents.end()) {
+//            removeNodeOccupied(pos, startTime);
+//            if (!waitingAgents.empty()) {
+//                auto it3 = waitingAgents.rbegin();
+//                addNodeOccupied(pos, it3->first, std::numeric_limits<size_t>::max() / 2);
+//            }
+//        }
     }
 }
 
@@ -236,13 +330,17 @@ Map::Direction Map::getDirectionByPos(std::pair<size_t, size_t> pos1, std::pair<
     return Direction::NONE;
 }
 
+void Map::printOccupied(std::map<size_t, size_t> *occupied) {
+    for (auto item : *occupied) {
+        std::cerr << "[" << item.first << "," << item.second << ") ";
+    }
+}
+
 void Map::printOccupiedMap() const {
     for (auto it = occupiedMap.begin(); it != occupiedMap.end(); ++it) {
-        std::cout << it->first.pos.first << " " << it->first.pos.second << " " << (int) it->first.direction << ": ";
-        for (auto item : it->second->rangeConstraints) {
-            std::cout << "[" << item.first << "," << item.second << ") ";
-        }
-        std::cout << std::endl;
+        std::cerr << it->first.pos.first << " " << it->first.pos.second << " " << (int) it->first.direction << ": ";
+        printOccupied(&it->second->rangeConstraints);
+        std::cerr << std::endl;
     }
 }
 

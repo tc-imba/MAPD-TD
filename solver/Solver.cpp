@@ -12,7 +12,7 @@
 bool Solver::isOccupied(std::map<size_t, size_t> *occupied, size_t startTime, size_t endTime) {
     if (!occupied) return false;
     auto it = occupied->upper_bound(startTime);
-    if (it != occupied->begin()) --it;
+    if (!occupied->empty() && it != occupied->begin()) --it;
     for (; it != occupied->end(); ++it) {
         if (endTime <= it->first) return false;
         if (startTime < it->second) return true;
@@ -143,6 +143,14 @@ void Solver::addVirtualNodeToList(std::multimap<size_t, VirtualNode *> &list,
         delete vNode;
         return;
     }
+
+/*    auto &node = nodes[vNode->pos.first][vNode->pos.second];
+    if (isOccupied(node.occupied, vNode->leaveTime)) {
+        std::cerr << "error: " << vNode->pos.first << " " << vNode->pos.second << " " << vNode->leaveTime << std::endl;
+        Map::printOccupied(node.occupied);
+        std::cerr << std::endl;
+    }*/
+
     list.emplace(vNode->estimateTime, vNode);
     if (editNode) {
         auto &node = nodes[vNode->pos.first][vNode->pos.second];
@@ -308,6 +316,10 @@ Solver::VirtualNode *Solver::step() {
     auto vNode = removeVirtualNodeFromList(open, it, false);
     auto &node = nodes[vNode->pos.first][vNode->pos.second];
 
+//    if (logging) {
+//        std::cout << vNode->pos.first << " " << vNode->pos.second << " " << vNode->leaveTime << " " << vNode->checkpoint << std::endl;
+//    }
+
 //    if (vNode->leaveTime >= deadline) {
 //        return nullptr;
 //    }
@@ -358,6 +370,10 @@ Solver::VirtualNode *Solver::step() {
 //            }
 
             replaceNode(vNode, p.second, neighborNode, edge, true);
+//            if (logging) {
+//                std::cout << vNode->pos.first << " " << vNode->pos.second << " " << vNode->leaveTime << " -> "
+//                          << p.second.first << " " << p.second.second << " " << vNode->leaveTime + 1 << std::endl;
+//            }
         }
 
         // if h_v + 1 not in O_v
@@ -365,28 +381,29 @@ Solver::VirtualNode *Solver::step() {
             // Add (v, h_v+1, v_p) to the OPEN list;
             auto newNode = createVirtualNode(vNode->pos, vNode->leaveTime + 1, vNode->parent, vNode->checkpoint, true);
             addVirtualNodeToList(open, newNode, true);
+//            if (logging) {
+//                std::cout << vNode->pos.first << " " << vNode->pos.second << " " << vNode->leaveTime << " -> "
+//                          << vNode->pos.first << " " << vNode->pos.second << " " << vNode->leaveTime + 1 << std::endl;
+//            }
         }
 
-    } else if (algorithmId == 1) {
+    }
+    else if (algorithmId == 1) {
         if (!vNode->hasChild) {
             for (auto direction : Map::directions) {
                 auto &edge = node.edges[(size_t) direction];
                 if (!edge.available) continue; // no node
                 auto p = map->getPosByDirection(vNode->pos, direction);
                 auto &neighborNode = nodes[p.second.first][p.second.second];
-                if (vNode->parent && p.second == vNode->parent->pos) continue; // v_n=v_p
-
-//                if (logging && p.second.first == 9 && p.second.second == 25) {
-//                    std::cerr << "debug" << std::endl;
-//                }
+                if (vNode->parent && p.second == vNode->parent->pos && vNode->checkpoint == vNode->parent->checkpoint) continue; // v_n=v_p
 
                 auto newTime = findFirstNotOccupiedTimestamp(edge.occupied, neighborNode.occupied, vNode->leaveTime, 1);
                 auto waitInterval = findNotOccupiedInterval(node.occupied, vNode->leaveTime, newTime);
 
-                if (logging) {
-                    std::cout << vNode->pos.first << " " << vNode->pos.second << " " << vNode->leaveTime << " -> "
-                              << p.second.first << " " << p.second.second << " " << newTime << std::endl;
-                }
+//                if (vNode->pos.first == 19 && vNode->pos.second == 18) {
+//                    std::cout << vNode->pos.first << " " << vNode->pos.second << " " << vNode->leaveTime << " -> "
+//                              << p.second.first << " " << p.second.second << " " << newTime << std::endl;
+//                }
 
                 if (newTime < std::numeric_limits<size_t>::max() / 2 && waitInterval.first < waitInterval.second) {
                     auto newNode = createVirtualNode(vNode->pos, newTime, vNode->parent, vNode->checkpoint, p.second, true);
@@ -405,10 +422,10 @@ Solver::VirtualNode *Solver::step() {
                     auto waitInterval = findNotOccupiedInterval(node.occupied, vNode->leaveTime, newTime);
 //                    std::cout << vNode->leaveTime << " " << it2->first << " " << newTime << std::endl;
 
-                    if (logging) {
-                        std::cout << vNode->pos.first << " " << vNode->pos.second << " " << vNode->leaveTime << " -> "
-                                  << vNode->pos.first << " " << vNode->pos.second << " " << newTime << std::endl;
-                    }
+//                    if (logging) {
+//                        std::cout << vNode->pos.first << " " << vNode->pos.second << " " << vNode->leaveTime << " -> "
+//                                  << vNode->pos.first << " " << vNode->pos.second << " " << newTime << std::endl;
+//                    }
 
                     if (newTime < std::numeric_limits<size_t>::max() / 2 && waitInterval.first < waitInterval.second) {
                         auto newNode = createVirtualNode(vNode->pos, newTime, vNode->parent, vNode->checkpoint, vNode->child, true);

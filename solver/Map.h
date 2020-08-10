@@ -71,9 +71,15 @@ public:
 
     void addNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, size_t endTime);
 
-    void removeNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime);
+    void removeNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, size_t endTime);
+
+    size_t addInfiniteWaiting(std::pair<size_t, size_t> pos, size_t startTime = 0);
+
+    size_t removeInfiniteWaiting(std::pair<size_t, size_t> pos);
 
     void addEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime, size_t endTime);
+
+    void removeEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime, size_t endTime);
 
     void addWaitingAgent(std::pair<size_t, size_t> pos, size_t startTime, size_t agent);
 
@@ -84,6 +90,8 @@ public:
     bool loadConstraints(const std::string &filename);
 
     auto &getOccupiedMap() const { return this->occupiedMap; };
+
+    static void printOccupied(std::map<size_t, size_t> *occupied);
 
     void printOccupiedMap() const;
 
