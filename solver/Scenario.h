@@ -51,6 +51,8 @@ public:
     };
 
     auto getOptimal() const { return this->optimal; };
+
+    auto getStartTime() const { return this->startTime; };
 };
 
 

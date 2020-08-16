@@ -290,7 +290,7 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
 //            auto &upperBound = upperBounds[j];
 
 
-        size_t agentEndTime = 0;
+        size_t agentStartTime = 0, agentEndTime = 0;
 
         if (multiLabelFlag) {
             std::vector<std::pair<size_t, size_t> > positions = {
@@ -298,19 +298,24 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
             };
             auto scenario = Scenario(i, map, positions, 0, 0);
             auto scenarioPath = computePath(solver, path, &scenario, agentLeaveTime, upperBound);
-
-            agentEndTime = scenarioPath.first;
+            for (auto &node: path) {
+                if (node.pos == task->scenario.getStart()) {
+                    agentStartTime = node.leaveTime;
+                    break;
+                }
+            }
+            if (agentStartTime > 0 && agentStartTime >= task->scenario.getStartTime()) {
+                agentEndTime = scenarioPath.first;
+            }
             count.step += scenarioPath.second;
         } else {
             // agent go to task start position
             auto scenario = Scenario(i, map, agent.currentPos, task->scenario.getStart(), 0, 0);
             auto scenarioPath = computePath(solver, path, &scenario, agentLeaveTime, upperBound);
 
-            auto agentStartTime = scenarioPath.first;
+            agentStartTime = scenarioPath.first;
             count.step += scenarioPath.second;
-            if (agentStartTime == 0) {
-                agent.flexibility[j] = Flexibility{-1, path, task.get(), deliveryOccupiedAgent};
-            } else {
+            if (agentStartTime > 0 && agentStartTime >= task->scenario.getStartTime()) {
                 scenarioPath = computePath(solver, path, &task->scenario, agentStartTime, upperBound);
                 agentEndTime = scenarioPath.first;
                 count.step += scenarioPath.second;
