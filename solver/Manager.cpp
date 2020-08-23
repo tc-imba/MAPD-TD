@@ -233,7 +233,9 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
         }
     }*/
 
-    solver.setLogging(true);
+//    solver.setLogging(true);
+
+    task->released = true;
 
     for (auto &p : sortAgent) {
         auto i = p.first;
@@ -322,6 +324,9 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
             }
         }
 
+        if (agentStartTime > 0 && agentStartTime < task->scenario.getStartTime()) {
+            task->released = false;
+        }
         if (agentEndTime == 0) {
             agent.flexibility[j] = Flexibility{-1, path, task.get(), deliveryOccupiedAgent};
         } else {
@@ -355,13 +360,13 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
 
 //        map->addWaitingAgent(agent.currentPos, agent.lastTimeStamp, i);
 
-        if (occupiedFlag && deliveryOccupiedAgent < agents.size()) {
+//        if (occupiedFlag && deliveryOccupiedAgent < agents.size()) {
 //            map->addNodeOccupied(agents[deliveryOccupiedAgent].currentPos,
 //                                 agents[deliveryOccupiedAgent].lastTimeStamp,
 //                                 std::numeric_limits<size_t>::max() / 2);
 //            map->addWaitingAgent(agents[deliveryOccupiedAgent].currentPos,
 //                                 agents[deliveryOccupiedAgent].lastTimeStamp, deliveryOccupiedAgent);
-        }
+//        }
         count.calculate++;
         //            if (agent.flexibility.back().beta >= 0) {
 //        std::cout << "calculate: " << i << " " << j << " " << agent.flexibility[j].beta << std::endl;
@@ -549,7 +554,7 @@ void Manager::selectTask(Solver &solver) {
     std::vector<std::unique_ptr<Task> > newTasks;
     for (size_t j = 0; j < tasks.size(); j++) {
         auto &task = tasks[j];
-        if (task->maxBetaAgent >= agents.size()) {
+        if (task->maxBetaAgent >= agents.size() && task->released) {
             std::cout << "fail task " << task->scenario.getBucket() << std::endl;
         } else if (j == selectedTask) {
             std::cout << "complete task " << task->scenario.getBucket() << std::endl;

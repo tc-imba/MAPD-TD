@@ -30,6 +30,7 @@ public:
         Scenario scenario;
         double maxBeta = -1;
         size_t maxBetaAgent = std::numeric_limits<size_t>::max();
+        bool released = true;
 
         explicit Task(Scenario &&scenario) : scenario(scenario) {}
     };

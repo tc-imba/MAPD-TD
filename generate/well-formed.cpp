@@ -55,16 +55,23 @@ int main() {
     string dataPath = "test-benchmark";
 
     size_t deliveryWidth = 10;
-    size_t deliveryX = 5;
-    size_t deliveryY = 2;
+    size_t deliveryX = 8;
+    size_t deliveryY = 3;
     size_t maxX = 4 * deliveryX + 1;
     size_t maxY = deliveryY * (deliveryWidth + 1) + 13;
 
     string mapName = generateMap(dataPath, deliveryWidth, deliveryX, deliveryY, maxX, maxY);
 
-    size_t agentNum = 20;
+    size_t agentNum = 100;
     size_t k = 2;
-    ofstream fout(dataPath + "/task/" + mapName + "-" + to_string(agentNum) + "-" + to_string(k) + ".task");
+    bool release = false;
+
+    string filename = dataPath + "/task/" + mapName + "-" + to_string(agentNum) + "-" + to_string(k);
+    if (release) {
+        filename += "-release";
+    }
+    filename +=  ".task";
+    ofstream fout(filename);
 
 //    std::mt19937 g(0);
     std::mt19937 g;
@@ -105,6 +112,8 @@ int main() {
         parkingPoints.pop_back();
         agentConfigs << firstPoint.first << " " << firstPoint.second << endl;
         size_t dist = 0;
+        int startTime = 0;
+
         for (size_t j = 0; j < k; j++) {
             auto evenPoint = taskPoints[sampleTask(g)];
             auto scenario = Scenario(i, map, firstPoint, evenPoint, 0, 0);
@@ -116,12 +125,14 @@ int main() {
             solver.initScenario(&scenario);
             dist += calculateDistance(solver);
 
-            int startTime = 0;
 
             taskConfigs << evenPoint.first << " " << evenPoint.second << " "
                         << oddPoint.first << " " << oddPoint.second << " " << dist << " " << startTime <<  endl;
 
             firstPoint = oddPoint;
+            if (release) {
+                startTime += dist;
+            }
         }
     }
 
