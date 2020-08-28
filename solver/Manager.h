@@ -66,6 +66,7 @@ private:
 
     std::vector<Agent> agents;
     std::vector<std::unique_ptr<Task> > tasks;
+    size_t agentMaxTimestamp = 0;
 
 //    std::list<std::unique_ptr<Scenario> > tasks;
 //    std::vector<size_t> tasksMaxBetaAgent;
@@ -75,6 +76,7 @@ private:
     bool sortFlag;
     bool multiLabelFlag;
     bool occupiedFlag;
+    bool deadlineBoundFlag;
 
     void applyReservedPath();
 
@@ -105,7 +107,8 @@ private:
 public:
     explicit Manager(std::string dataPath, size_t maxStep = 10000,
                      bool boundFlag = true, bool sortFlag = true,
-                     bool multiLabelFlag = true, bool occupiedFlag = true);
+                     bool multiLabelFlag = true, bool occupiedFlag = true,
+                     bool deadlineBoundFlag = true);
 
     Map *getMap(const std::string &mapName);
 

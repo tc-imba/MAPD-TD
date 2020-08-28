@@ -12,10 +12,11 @@
 #include <chrono>
 
 Manager::Manager(std::string dataPath, size_t maxStep,
-                 bool boundFlag, bool sortFlag, bool multiLabelFlag, bool occupiedFlag)
+                 bool boundFlag, bool sortFlag, bool multiLabelFlag, bool occupiedFlag, bool deadlineBoundFlag)
         : dataPath(std::move(dataPath)), maxStep(maxStep),
           boundFlag(boundFlag), sortFlag(sortFlag),
-          multiLabelFlag(multiLabelFlag), occupiedFlag(occupiedFlag) {}
+          multiLabelFlag(multiLabelFlag), occupiedFlag(occupiedFlag),
+          deadlineBoundFlag(deadlineBoundFlag) {}
 
 Map *Manager::loadMapFile(const std::string &mapName) {
     auto filePath = dataPath + "/map/" + mapName;
@@ -293,8 +294,10 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
 
 
         size_t agentStartTime = 0, agentEndTime = 0;
-
-        if (multiLabelFlag) {
+        size_t distance = Map::getDistance(agent.currentPos, task->scenario.getStart());
+        if (deadlineBoundFlag && agentMaxTimestamp + distance < task->scenario.getStartTime()) {
+            task->released = false;
+        } else if (multiLabelFlag) {
             std::vector<std::pair<size_t, size_t> > positions = {
                     agent.currentPos, task->scenario.getStart(), task->scenario.getEnd()
             };
@@ -458,6 +461,9 @@ void Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector
         map->addWaitingAgent(agent.currentPos, agent.lastTimeStamp, i);
         agent.path.insert(agent.path.end(), vector.begin(), vector.end());
     }
+    agentMaxTimestamp = std::max(agentMaxTimestamp, agent.lastTimeStamp);
+
+
 //    map->printOccupiedMap();
 }
 
@@ -588,6 +594,8 @@ bool Manager::reservePath(Solver &solver, size_t i) {
     map->removeInfiniteWaiting(agent.originPos);
     addAgentPathConstraints(map, agent, path);
     map->addInfiniteWaiting(agent.originPos);
+
+    agentMaxTimestamp = std::max(agentMaxTimestamp, path.back().leaveTime);
 
 
 //    agent.waitingPos = path.back().pos;

@@ -11,7 +11,7 @@
 #include "Solver.h"
 
 std::string generateOutputFileName(const std::string &scheduler, int algorithmId,
-                                   bool boundFlag, bool sortFlag, bool multiLabelFlag) {
+                                   bool boundFlag, bool sortFlag, bool multiLabelFlag, bool deadlineBoundFlag) {
     std::ostringstream oss;
     oss << scheduler << "-algo-" << algorithmId;
     if (boundFlag) {
@@ -22,6 +22,9 @@ std::string generateOutputFileName(const std::string &scheduler, int algorithmId
     }
     if (multiLabelFlag) {
         oss << "-mlabel";
+    }
+    if (deadlineBoundFlag) {
+        oss << "-db";
     }
     oss << ".txt";
     return oss.str();
@@ -53,12 +56,13 @@ int main(int argc, const char *argv[]) {
     optionParser.add("", false, 0, 0, "Use Branch and Bound", "-b", "--bound");
     optionParser.add("", false, 0, 0, "Use Sort", "-s", "--sort");
     optionParser.add("", false, 0, 0, "Use Multi Label", "-m", "--mlabel");
+    optionParser.add("", false, 0, 0, "Use Deadline Bound", "-db", "--deadline-bound");
     optionParser.parse(argc, argv);
 
     std::string dataPath, taskFile, outputFile, scheduler;
     double phi;
     int algorithmId;
-    bool boundFlag, sortFlag, multiLabelFlag;
+    bool boundFlag, sortFlag, multiLabelFlag, deadlineBoundFlag;
     unsigned long long maxStep;
 
     optionParser.get("--data")->getString(dataPath);
@@ -71,18 +75,19 @@ int main(int argc, const char *argv[]) {
     boundFlag = optionParser.isSet("--bound");
     sortFlag = optionParser.isSet("--sort");
     multiLabelFlag = optionParser.isSet("--mlabel");
+    deadlineBoundFlag = optionParser.isSet("--deadline-bound");
 
     auto coutBuf = std::cout.rdbuf();
     std::ofstream fout;
     if (!outputFile.empty()) {
         if (outputFile == "auto") {
-            outputFile = generateOutputFileName(scheduler, algorithmId, boundFlag, sortFlag, multiLabelFlag);
+            outputFile = generateOutputFileName(scheduler, algorithmId, boundFlag, sortFlag, multiLabelFlag, deadlineBoundFlag);
         }
         fout.open(outputFile);
         std::cout.rdbuf(fout.rdbuf());
     }
 
-    Manager manager(dataPath, maxStep, boundFlag, sortFlag, multiLabelFlag, true);
+    Manager manager(dataPath, maxStep, boundFlag, sortFlag, multiLabelFlag, true, deadlineBoundFlag);
     auto map = manager.loadTaskFile(taskFile);
 
     if (scheduler == "edf") {
