@@ -51,6 +51,10 @@ public:
         std::vector<Flexibility> flexibility;
 
         explicit Agent(std::pair<size_t, size_t> pos) : originPos(pos), currentPos(pos) {}
+
+        Agent(const Agent &that) :
+                originPos(that.originPos), currentPos(that.currentPos),
+                lastTimeStamp(that.lastTimeStamp), reservedPath(that.reservedPath) {}
     };
 
     struct Count {
@@ -94,13 +98,15 @@ private:
 
     Map *loadMapFile(const std::string &filename);
 
+    std::pair<size_t, size_t> computeReservedPath(Solver &solver, size_t i, std::vector<PathNode> &path);
+
     bool reservePath(Solver &solver, size_t i);
 
     std::pair<size_t, size_t> computePath(Solver &solver, std::vector<PathNode> &path, Scenario *task,
                                           size_t startTime, size_t deadline);
 
     size_t computeAgentForTask(Solver &solver, size_t j, const std::vector<std::pair<size_t, double> > &sortAgent,
-                               double phi, double &minBeta, Count& count);
+                               double phi, double &minBeta, Count &count);
 
     bool isPathConflict(Solver &solver, Agent &agent, const std::vector<PathNode> &vector);
 

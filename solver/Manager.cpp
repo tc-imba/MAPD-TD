@@ -394,6 +394,52 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
     return taskMaxAgent;
 }
 
+bool Manager::reservePath(Solver &solver, size_t i) {
+    auto map = solver.getMap();
+    auto &agent = agents[i];
+    Scenario task(0, map, agent.currentPos, agent.originPos, 0, 0);
+    std::vector<PathNode> path;
+
+    map->removeNodeOccupied(agent.currentPos, agent.lastTimeStamp, agent.lastTimeStamp + 1);
+    auto infiniteWaiting = map->removeInfiniteWaiting(agent.originPos);
+    auto result = computePath(solver, path, &task, agent.lastTimeStamp, std::numeric_limits<size_t>::max() / 2);
+    map->addNodeOccupied(agent.currentPos, agent.lastTimeStamp, agent.lastTimeStamp + 1);
+    map->addInfiniteWaiting(agent.originPos, infiniteWaiting);
+
+    if (result.first == 0) {
+        return false;
+    }
+
+    map->removeNodeOccupied(agent.currentPos, agent.lastTimeStamp, agent.lastTimeStamp + 1);
+    map->removeInfiniteWaiting(agent.originPos);
+    addAgentPathConstraints(map, agent, path);
+    map->addInfiniteWaiting(agent.originPos);
+
+//    agentMaxTimestamp = std::max(agentMaxTimestamp, path.back().leaveTime);
+
+
+//    agent.waitingPos = path.back().pos;
+//    agent.waitingTimeStamp = path.back().leaveTime;
+
+    agent.reservedPath.swap(path);
+//    map->addWaitingAgent(agent.currentPos, agent.lastTimeStamp, i);
+    std::cerr << "reserve: " << i << std::endl;
+    return true;
+}
+
+std::pair<size_t, size_t> Manager::computeReservedPath(Solver &solver, size_t i, std::vector<PathNode> &path) {
+    auto map = solver.getMap();
+    auto &agent = agents[i];
+    Scenario task(0, map, agent.currentPos, agent.originPos, 0, 0);
+
+    map->removeNodeOccupied(agent.currentPos, agent.lastTimeStamp, agent.lastTimeStamp + 1);
+    auto infiniteWaiting = map->removeInfiniteWaiting(agent.originPos);
+    auto result = computePath(solver, path, &task, agent.lastTimeStamp, std::numeric_limits<size_t>::max() / 2);
+    map->addNodeOccupied(agent.currentPos, agent.lastTimeStamp, agent.lastTimeStamp + 1);
+    map->addInfiniteWaiting(agent.originPos, infiniteWaiting);
+    return result;
+}
+
 void Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector, size_t occupiedAgent) {
     auto map = solver.getMap();
     auto &agent = agents[i];
@@ -417,7 +463,91 @@ void Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector
 
     map->addInfiniteWaiting(agent.originPos);
 
+    std::set<size_t> reservingAgentSet;
+    if (occupiedFlag) {
+        for (auto &node : vector) {
+            auto j = map->getLastWaitingAgent(node.pos);
+            if (j >= agents.size()) continue;
+            if (!agents[j].reservedPath.empty() || agents[j].lastTimeStamp > node.leaveTime) continue;
+            if (agents[j].originPos == node.pos) continue;
+            reservingAgentSet.emplace(j);
+        }
+        if (occupiedAgent < agents.size() && occupiedAgent != i) {
+            size_t reservingAgent;
+            if (agent.lastTimeStamp < agents[occupiedAgent].lastTimeStamp) {
+                reservingAgent = i;
+            } else {
+                reservingAgent = occupiedAgent;
+            }
+            reservingAgentSet.emplace(reservingAgent);
+        }
+    }
+    if (reservingAgentSet.empty()) {
+        // no overlapping
+        agent.currentPos = vector.back().pos;
+        agent.lastTimeStamp = vector.back().leaveTime;
+        agent.reservedPath.clear();
+        map->addWaitingAgent(agent.currentPos, agent.lastTimeStamp, i);
+        agent.path.insert(agent.path.end(), vector.begin(), vector.end());
+    } else {
+        auto tempPos = agent.currentPos;
+        auto tempTimeStamp = agent.lastTimeStamp;
+        std::vector<PathNode> tempReservedPath;
+        tempReservedPath.swap(agent.reservedPath);
 
+        agent.currentPos = vector.back().pos;
+        agent.lastTimeStamp = vector.back().leaveTime;
+
+        std::vector<std::pair<size_t, Agent> > savedAgents;
+        savedAgents.reserve(reservingAgentSet.size());
+        size_t successAgents = 0;
+        for (auto j : reservingAgentSet) {
+            savedAgents.emplace_back(j, agents[j]);
+            if (reservePath(solver, j)) {
+                successAgents++;
+            } else break;
+        }
+        if (successAgents == reservingAgentSet.size()) {
+            // reserve agent successfully
+            for (auto &p : savedAgents) {
+                agentMaxTimestamp = std::max(agentMaxTimestamp, agents[p.first].reservedPath.back().leaveTime);
+            }
+            agent.path.insert(agent.path.end(), vector.begin(), vector.end());
+            map->addWaitingAgent(agent.currentPos, agent.lastTimeStamp, i);
+            std::cerr << "success: " << i << " reserved: ";
+            for (auto &p : savedAgents) {
+                agentMaxTimestamp = std::max(agentMaxTimestamp, agents[p.first].reservedPath.back().leaveTime);
+                std::cerr << p.first << " ";
+            }
+            std::cerr << std::endl;
+        } else {
+//            exit(-1);
+            // revert the agent position for failed task
+            for (auto k = successAgents; k != 0; k--) {
+                auto j = savedAgents[k].first;
+                auto &restoreAgent = agents[j];
+                auto &savedAgent = savedAgents[k].second;
+
+                map->removeInfiniteWaiting(savedAgent.originPos);
+                addAgentPathConstraints(map, savedAgent, restoreAgent.reservedPath);
+                map->addInfiniteWaiting(savedAgent.originPos);
+                map->addNodeOccupied(savedAgent.currentPos, savedAgent.lastTimeStamp, savedAgent.lastTimeStamp + 1);
+
+                restoreAgent.currentPos = savedAgent.currentPos;
+                restoreAgent.lastTimeStamp = savedAgent.lastTimeStamp;
+                restoreAgent.reservedPath.swap(savedAgent.reservedPath);
+            }
+
+            agent.currentPos = tempPos;
+            agent.lastTimeStamp = tempTimeStamp;
+            agent.reservedPath.swap(tempReservedPath);
+            map->addWaitingAgent(agent.currentPos, agent.lastTimeStamp, i);
+            std::cerr << "fail: " << i << " " << occupiedAgent << std::endl;
+        }
+    }
+    agentMaxTimestamp = std::max(agentMaxTimestamp, agent.lastTimeStamp);
+
+/*
     if (occupiedFlag && occupiedAgent < agents.size() && occupiedAgent != i) {
         auto tempPos = agent.currentPos;
         auto tempTimeStamp = agent.lastTimeStamp;
@@ -427,13 +557,14 @@ void Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector
         agent.currentPos = vector.back().pos;
         agent.lastTimeStamp = vector.back().leaveTime;
 
-        size_t reservingAgent, stayingAgent;
+        size_t reservingAgent;
+//        size_t reservingAgent, stayingAgent;
         if (agent.lastTimeStamp < agents[occupiedAgent].lastTimeStamp) {
             reservingAgent = i;
-            stayingAgent = occupiedAgent;
+//            stayingAgent = occupiedAgent;
         } else {
             reservingAgent = occupiedAgent;
-            stayingAgent = i;
+//            stayingAgent = i;
         }
 
         if (reservePath(solver, reservingAgent)) {
@@ -462,9 +593,7 @@ void Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector
         agent.path.insert(agent.path.end(), vector.begin(), vector.end());
     }
     agentMaxTimestamp = std::max(agentMaxTimestamp, agent.lastTimeStamp);
-
-
-//    map->printOccupiedMap();
+*/
 }
 
 std::vector<Manager::Constraint>
@@ -555,38 +684,6 @@ void Manager::selectTask(Solver &solver) {
     tasks.swap(newTasks);
 }
 
-bool Manager::reservePath(Solver &solver, size_t i) {
-    auto map = solver.getMap();
-    auto &agent = agents[i];
-    Scenario task(0, map, agent.currentPos, agent.originPos, 0, 0);
-    std::vector<PathNode> path;
-
-    map->removeNodeOccupied(agent.currentPos, agent.lastTimeStamp, agent.lastTimeStamp + 1);
-    auto infiniteWaiting = map->removeInfiniteWaiting(agent.originPos);
-    auto result = computePath(solver, path, &task, agent.lastTimeStamp, std::numeric_limits<size_t>::max() / 2);
-    map->addNodeOccupied(agent.currentPos, agent.lastTimeStamp, agent.lastTimeStamp + 1);
-    map->addInfiniteWaiting(agent.originPos, infiniteWaiting);
-
-    if (result.first == 0) {
-        return false;
-    }
-
-    map->removeNodeOccupied(agent.currentPos, agent.lastTimeStamp, agent.lastTimeStamp + 1);
-    map->removeInfiniteWaiting(agent.originPos);
-    addAgentPathConstraints(map, agent, path);
-    map->addInfiniteWaiting(agent.originPos);
-
-    agentMaxTimestamp = std::max(agentMaxTimestamp, path.back().leaveTime);
-
-
-//    agent.waitingPos = path.back().pos;
-//    agent.waitingTimeStamp = path.back().leaveTime;
-
-    agent.reservedPath.swap(path);
-//    map->addWaitingAgent(agent.currentPos, agent.lastTimeStamp, i);
-    std::cerr << "reserve: " << i << std::endl;
-    return true;
-}
 
 std::pair<size_t, size_t> Manager::computePath(Solver &solver, std::vector<PathNode> &path,
                                                Scenario *task, size_t startTime, size_t deadline) {
