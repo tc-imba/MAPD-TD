@@ -282,12 +282,12 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
         const auto deliveryOccupiedAgent = map->getLastWaitingAgent(task->scenario.getEnd());
 
         // if an agent is at end pos, remove its node constraint
-        if (occupiedFlag && deliveryOccupiedAgent < agents.size()) {
+//        if (occupiedFlag && deliveryOccupiedAgent < agents.size()) {
 //            map->removeNodeOccupied(agents[deliveryOccupiedAgent].currentPos,
 //                                    agents[deliveryOccupiedAgent].lastTimeStamp);
 //            map->removeWaitingAgent(agents[deliveryOccupiedAgent].currentPos,
 //                                    agents[deliveryOccupiedAgent].lastTimeStamp, deliveryOccupiedAgent);
-        }
+//        }
 
 //            double deadline = (1 + phi) * task->getOptimal();
 //            auto &upperBound = upperBounds[j];
@@ -514,26 +514,7 @@ void Manager::removeAgentPathConstraints(Map *map, Agent &agent, const std::vect
 
 void Manager::selectTask(Solver &solver) {
     auto map = solver.getMap();
-//    int j = 0;
-//    std::vector<int> maxFlexAgent(tasks.size(), -1);
     double minFlex = std::numeric_limits<double>::max();
-//    int selectedTask = -1;
-//
-//    for (auto &task :tasks) {
-//        double maxFlex = -1;
-//        for (int i = 0; i < agents.size(); i++) {
-//            auto &flex = agents[i].flexibility[j];
-//            if (flex.beta > maxFlex) {
-//                maxFlex = flex.beta;
-//                maxFlexAgent[j] = i;
-//            }
-//        }
-//        if (maxFlex >= 0 && maxFlex < minFlex) {
-//            minFlex = maxFlex;
-//            selectedTask = j;
-//        }
-//        j++;
-//    }
 
     size_t selectedTask = std::numeric_limits<size_t>::max();
     for (size_t j = 0; j < tasks.size(); j++) {
@@ -698,33 +679,6 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
             while (prevIndex < prevFlexibility.size() && prevFlexibility[prevIndex].task != task.get()) {
                 ++prevIndex;
             }
-            // skip not conflict path
-/*            if (prevIndex < prevFlexibility.size()) {
-                auto &path = prevFlexibility[prevIndex].path;
-                if (!isPathConflict(solver, agents[i], prevFlexibility[prevIndex].path)) {
-                    auto &prev = prevFlexibility[prevIndex];
-                    if (prev.beta >= 0) {
-                        upperBound = std::min(upperBound, (size_t) (deadline - prev.beta + 1));
-                    }
-                    agents[i].flexibility.emplace_back(prev);
-//                    std::cout << "skip: " << i << " " << j << " " << agents[i].flexibility.back().beta << std::endl;
-                    j++;
-                    skipCount++;
-//                    recalculateTasks[j] = false;
-                    continue;
-                }
-            }*/
-
-            // test occupied
-            /*if (occupiedFlag) {
-                if (agents[i].currentPos == task->scenario.getStart()) {
-                    occupiedAgent[j].first = i;
-                }
-                if (agents[i].currentPos == task->scenario.getEnd()) {
-                    occupiedAgent[j].second = i;
-                }
-            }*/
-
             // sort the tasks
             double beta = -1;
             if (prevIndex < prevFlexibility.size()) {
@@ -749,127 +703,6 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
         }
 
         computeAgentForTask(solver, j, sortAgents[j], phi, minBeta, count);
-
-/*        // set branch and bound
-        double deadline = (1 + phi) * task->scenario.getOptimal();
-        size_t upperBound;
-        if (boundFlag) {
-            upperBound = deadline + 1;
-        } else {
-            upperBound = std::numeric_limits<size_t>::max() / 2;
-        }
-        double taskMaxBeta = -1;
-        size_t taskMaxAgent = std::numeric_limits<size_t>::max();
-
-        bool skipFlag = false;
-        for (auto &p : sortAgents[j]) {
-            auto i = p.first;
-            auto agentLeaveTime = agents[i].lastTimeStamp;
-            std::vector<PathNode> path;
-            const auto deliveryOccupiedAgent = occupiedAgent[j].second;
-
-            if (skipFlag) {
-                auto beta = p.second;
-                if (beta < 0) beta = -1;
-                else if (beta < minBeta) beta = minBeta;
-                agents[i].flexibility[j] = Flexibility{beta, path, task.get(), deliveryOccupiedAgent};
-                skipCount++;
-                continue;
-            }
-
-            // if an agent is at start pos, skip other agents
-//            if (occupiedFlag && occupiedAgent[j].first < agents.size() && occupiedAgent[j].first != i) {
-//                agents[i].flexibility.emplace_back(Flexibility{-1, path, task.get(), deliveryOccupiedAgent});
-//                skipCount++;
-//                continue;
-//            }
-
-            // clear node constraint for parking location of the current agent
-            map->removeNodeOccupied(agents[i].currentPos, agentLeaveTime);
-
-            // if an agent is at end pos, remove its node constraint
-            if (occupiedFlag && deliveryOccupiedAgent < agents.size() && deliveryOccupiedAgent != i) {
-                map->removeNodeOccupied(agents[deliveryOccupiedAgent].currentPos,
-                                        agents[deliveryOccupiedAgent].lastTimeStamp);
-            }
-
-//            double deadline = (1 + phi) * task->getOptimal();
-//            auto &upperBound = upperBounds[j];
-
-
-            size_t agentEndTime = 0;
-
-            if (multiLabelFlag) {
-                std::vector<std::pair<size_t, size_t> > positions = {
-                        agents[i].currentPos, task->scenario.getStart(), task->scenario.getEnd()
-                };
-                auto scenario = Scenario(i, map, positions, 0);
-                auto scenarioPath = computePath(solver, path, &scenario, agentLeaveTime, upperBound);
-
-                agentEndTime = scenarioPath.first;
-                stepCount += scenarioPath.second;
-            } else {
-                // agent go to task start position
-                auto scenario = Scenario(i, map, agents[i].currentPos, task->scenario.getStart(), 0);
-                auto scenarioPath = computePath(solver, path, &scenario, agentLeaveTime, upperBound);
-
-                auto agentStartTime = scenarioPath.first;
-                stepCount += scenarioPath.second;
-                if (agentStartTime == 0) {
-                    agents[i].flexibility[j] = Flexibility{-1, path, task.get(), deliveryOccupiedAgent};
-                } else {
-                    scenarioPath = computePath(solver, path, &task->scenario, agentStartTime, upperBound);
-                    agentEndTime = scenarioPath.first;
-                    stepCount += scenarioPath.second;
-                }
-            }
-
-            if (agentEndTime == 0) {
-                agents[i].flexibility[j] = Flexibility{-1, path, task.get(), deliveryOccupiedAgent};
-            } else {
-                size_t pathLength = agentEndTime - agentLeaveTime;
-                double beta = deadline;
-                if (x == 1) {
-                    beta -= (double) (agentLeaveTime + pathLength);
-                }
-                agents[i].flexibility[j] = Flexibility{beta, path, task.get(), deliveryOccupiedAgent};
-                if (beta > 0) {
-                    if (boundFlag) {
-                        if (minBeta > 0 && beta >= minBeta) {
-                            skipFlag = true;
-                        }
-                        upperBound = std::min(upperBound, (size_t) (deadline - beta + 1));
-                    }
-                    if (beta > taskMaxBeta) {
-                        taskMaxBeta = beta;
-                        taskMaxAgent = i;
-                    }
-                }
-            }
-
-            // add back node constraint for parking location of the current agent
-            map->addNodeOccupied(agents[i].currentPos, agentLeaveTime, std::numeric_limits<size_t>::max() / 2);
-
-            if (occupiedFlag && deliveryOccupiedAgent < agents.size() && deliveryOccupiedAgent != i) {
-                map->addNodeOccupied(agents[deliveryOccupiedAgent].currentPos,
-                                     agents[deliveryOccupiedAgent].lastTimeStamp,
-                                     std::numeric_limits<size_t>::max() / 2);
-            }
-
-            calculateCount++;
-//            if (agents[i].flexibility.back().beta >= 0) {
-//                std::cout << "calculate: " << i << " " << task->getBucket() << " " << agents[i].flexibility.back().beta << std::endl;
-//            }
-        }
-
-        task->maxBeta = taskMaxBeta;
-        task->maxBetaAgent = taskMaxAgent;
-
-        if (!skipFlag && taskMaxBeta >= 0 && (minBeta < 0 || taskMaxBeta < minBeta)) {
-            minBeta = taskMaxBeta;
-//            minBetaTask = j;
-//            std::cout << task->getBucket() << " " << minBeta << std::endl;
-        }*/
     }
     std::cout << "calculate: " << count.calculate << ", skip: " << count.skip << ", step: " << count.step << std::endl;
 
