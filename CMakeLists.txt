@@ -3,6 +3,9 @@ project(MAPF)
 
 set(CMAKE_CXX_STANDARD 14)
 
+find_package(Boost)
+include_directories(${Boost_INCLUDE_DIRS})
+
 add_executable(
         MAPF
         solver/main.cpp solver/Map.cpp solver/Map.h

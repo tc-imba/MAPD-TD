@@ -102,9 +102,10 @@ size_t Map::addInfiniteWaiting(std::pair<size_t, size_t> pos, size_t startTime) 
             auto occupied = &it->second->rangeConstraints;
             if (!occupied->empty()) {
                 auto it2 = --occupied->end();
-                if (it2->second < infinite) {
-                    occupied->emplace(it2->second + 1, infinite);
-                    return it2->second + 1;
+                if (it2->upper() < infinite) {
+                    auto interval = boost::icl::discrete_interval<size_t>(it2->upper() + 1, infinite);
+                    occupied->add(interval);
+                    return it2->upper() + 1;
                 }
             }
         }
@@ -121,8 +122,8 @@ size_t Map::removeInfiniteWaiting(std::pair<size_t, size_t> pos) {
         auto occupied = &it->second->rangeConstraints;
         if (!occupied->empty()) {
             auto it2 = --occupied->end();
-            if (it2->second >= infinite) {
-                size_t result = it2->first;
+            if (it2->upper() >= infinite) {
+                size_t result = it2->lower();
                 occupied->erase(it2);
                 return result;
             }
@@ -147,58 +148,26 @@ void Map::addEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction directio
     }
 
     OccupiedKey key = {pos, direction};
+    auto interval = boost::icl::discrete_interval<size_t>(startTime, endTime);
+
     auto it = occupiedMap.find(key);
     if (it == occupiedMap.end()) {
         auto occupied = std::make_unique<OccupiedValue>();
-        occupied->rangeConstraints.emplace(startTime, endTime);
+        occupied->rangeConstraints.add(interval);
         occupiedMap.emplace_hint(it, key, std::move(occupied));
     } else {
-        auto occupied = &it->second->rangeConstraints;
-        auto it2 = occupied->upper_bound(startTime);
-        if (!occupied->empty() && it2 != occupied->begin()) --it2;
-        // it2->startTime = it2->first
-        // it2->endTime = it2->second
-        while (it2 != occupied->end()) {
-            if (it2->first < endTime && startTime < it2->second) {
-                std::cerr << pos.first << " " << pos.second << " " << (int) direction << ": ";
-                printOccupied(occupied);
-                std::cerr << std::endl << startTime << " " << endTime << std::endl;
-//                exit(0);
-            }
-            /*if (pos.first == 9 && pos.second == 19 && direction == Map::Direction::NONE) {
-                std::cerr << pos.first << " " << pos.second << " " << (int) direction << ": ";
-                std::cerr << std::endl << startTime << " " << endTime << std::endl
-                          << it2->first << " " << it2->second << std::endl;
-                printOccupied(occupied);
-            }*/
-            if (it2->first <= endTime && startTime <= it2->second) {
-                endTime = std::max(it2->second, endTime);
-                startTime = std::min(it2->first, startTime);
-                it2 = occupied->erase(it2);
-                if (it2 != occupied->end() && it2->first == endTime) {
-                    endTime = it2->second;
-                    it2 = occupied->erase(it2);
-                }
-            } else if (it2->first > endTime) {
-                break;
-            } else {
-                ++it2;
-            }
+        auto occupied = it->second.get();
+        if (boost::icl::intersects(occupied->rangeConstraints, interval)) {
+            std::cerr << "add error: " << occupied->rangeConstraints << std::endl << startTime << " " << endTime
+                      << std::endl;
         }
-        occupied->emplace(startTime, endTime);
-//        std::cerr << pos.first << " " << pos.second << " " << (int) direction << " ";
-//        printOccupied(occupied);
-//        std::cerr << std::endl;
+        occupied->rangeConstraints.add(interval);
     }
 }
 
 void Map::removeEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime,
                              size_t endTime) {
     if (endTime <= startTime) return;
-
-//    if (pos.first == 15 && pos.second == 20 && startTime == 44) {
-//        std::cerr << startTime << " " << endTime << std::endl;
-//    }
 
     if (direction == Map::Direction::LEFT) {
         pos = getPosByDirection(pos, direction).second;
@@ -209,29 +178,18 @@ void Map::removeEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction direc
     }
 
     OccupiedKey key = {pos, direction};
+    auto interval = boost::icl::discrete_interval<size_t>(startTime, endTime);
 
     auto it = occupiedMap.find(key);
     if (it != occupiedMap.end()) {
-        auto occupied = &it->second->rangeConstraints;
-        auto it2 = occupied->upper_bound(startTime);
-        if (!occupied->empty() && it2 != occupied->begin()) --it2;
-        if (it2 != occupied->end() && it2->first <= startTime && it2->second >= endTime) {
-            auto pair = *it2;
-            occupied->erase(it2);
-            if (pair.first != startTime) {
-                occupied->emplace(pair.first, startTime);
-            }
-            if (pair.second != endTime) {
-                occupied->emplace(endTime, pair.second);
-            }
-            return;
+        auto &occupied = it->second->rangeConstraints;
+        if (!boost::icl::contains(occupied, interval)) {
+            std::cerr << "remove error: " << occupied << std::endl << startTime << " " << endTime << std::endl;
         }
-        std::cerr << pos.first << " " << pos.second << " " << (int) direction << ": ";
-        printOccupied(occupied);
-        std::cerr << std::endl << startTime << " " << endTime << std::endl;
+        occupied.subtract(interval);
+    } else {
+        std::cerr << "remove error: not found" << std::endl;
     }
-    exit(0);
-//    throw std::runtime_error("remove error");
 }
 
 void Map::addWaitingAgent(std::pair<size_t, size_t> pos, size_t startTime, size_t agent) {
@@ -339,8 +297,7 @@ void Map::printOccupied(std::map<size_t, size_t> *occupied) {
 void Map::printOccupiedMap() const {
     for (auto it = occupiedMap.begin(); it != occupiedMap.end(); ++it) {
         std::cerr << it->first.pos.first << " " << it->first.pos.second << " " << (int) it->first.direction << ": ";
-        printOccupied(&it->second->rangeConstraints);
-        std::cerr << std::endl;
+        std::cerr << it->second->rangeConstraints << std::endl;
     }
 }
 

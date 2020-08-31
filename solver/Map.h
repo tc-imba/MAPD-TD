@@ -11,6 +11,9 @@
 #include <map>
 #include <unordered_map>
 
+#include <boost/icl/discrete_interval.hpp>
+#include <boost/icl/interval_set.hpp>
+
 class Map {
 public:
     enum class Direction {
@@ -41,7 +44,7 @@ public:
     };
 
     struct OccupiedValue {
-        std::map<size_t, size_t> rangeConstraints;
+        boost::icl::interval_set<size_t> rangeConstraints;
         std::map<size_t, size_t> waitingAgents;
     };
 

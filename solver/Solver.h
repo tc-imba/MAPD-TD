@@ -15,6 +15,10 @@
 #include <memory>
 #include <limits>
 
+#include <boost/icl/discrete_interval.hpp>
+#include <boost/icl/interval_set.hpp>
+
+
 class Solver {
 public:
 
@@ -40,12 +44,14 @@ public:
     struct Edge {
 //        std::pair<size_t, size_t> start, end;
         bool available = true;
-        std::map<size_t, size_t> *occupied = nullptr;
+//        std::map<size_t, size_t> *occupied = nullptr;
+        boost::icl::interval_set<size_t> *occupied = nullptr;
     };
 
     struct Node {
 //        std::pair<size_t, size_t> pos;
-        std::map<size_t, size_t> *occupied = nullptr;
+//        std::map<size_t, size_t> *occupied = nullptr;
+        boost::icl::interval_set<size_t> *occupied = nullptr;
         std::set<VirtualNode *, VirtualNodeSameNodeComp> virtualNodes;
         std::array<Edge, 4> edges;
     };
@@ -66,21 +72,23 @@ private:
     size_t deadline;
 
 public:
+    bool isOccupied(boost::icl::interval_set<size_t> *occupied, boost::icl::discrete_interval<size_t> interval);
+
     // isOccupied in [startTime, endTime)
-    bool isOccupied(std::map<size_t, size_t> *occupied, size_t startTime, size_t endTime);
+    bool isOccupied(boost::icl::interval_set<size_t> *occupied, size_t startTime, size_t endTime);
 
     // isOccupied in [startTime, timeStart + 1)
-    bool isOccupied(std::map<size_t, size_t> *occupied, size_t timeStart);
+    bool isOccupied(boost::icl::interval_set<size_t> *occupied, size_t timeStart);
 
     std::pair<size_t, size_t>
-    findNotOccupiedInterval(std::map<size_t, size_t> *occupied, size_t startTime, size_t endTime);
+    findNotOccupiedInterval(boost::icl::interval_set<size_t> *occupied, size_t startTime, size_t endTime);
 
     std::pair<size_t, size_t>
-    findNotOccupiedInterval(std::map<size_t, size_t> *occupied, size_t startTime);
+    findNotOccupiedInterval(boost::icl::interval_set<size_t> *occupied, size_t startTime);
 
-    size_t findFirstNotOccupiedTimestamp(std::map<size_t, size_t> *occupied, size_t startTime, size_t duration);
+    size_t findFirstNotOccupiedTimestamp(boost::icl::interval_set<size_t> *occupied, size_t startTime, size_t duration);
 
-    size_t findFirstNotOccupiedTimestamp(std::map<size_t, size_t> *occupied, std::map<size_t, size_t> *occupied2,
+    size_t findFirstNotOccupiedTimestamp(boost::icl::interval_set<size_t> *occupied, boost::icl::interval_set<size_t> *occupied2,
                                          size_t startTime, size_t duration);
 
 private:

@@ -8,24 +8,22 @@
 #include <limits>
 #include <algorithm>
 
-
-bool Solver::isOccupied(std::map<size_t, size_t> *occupied, size_t startTime, size_t endTime) {
+bool Solver::isOccupied(boost::icl::interval_set<size_t> *occupied, boost::icl::discrete_interval<size_t> interval) {
     if (!occupied) return false;
-    auto it = occupied->upper_bound(startTime);
-    if (!occupied->empty() && it != occupied->begin()) --it;
-    for (; it != occupied->end(); ++it) {
-        if (endTime <= it->first) return false;
-        if (startTime < it->second) return true;
-    }
-    return false;
+    return boost::icl::intersects(*occupied, interval);
 }
 
-bool Solver::isOccupied(std::map<size_t, size_t> *occupied, size_t timeStart) {
+
+bool Solver::isOccupied(boost::icl::interval_set<size_t> *occupied, size_t startTime, size_t endTime) {
+    return isOccupied(occupied, boost::icl::discrete_interval<size_t>(startTime, endTime));
+}
+
+bool Solver::isOccupied(boost::icl::interval_set<size_t> *occupied, size_t timeStart) {
     return isOccupied(occupied, timeStart, timeStart + 1);
 }
 
 bool Solver::isOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime, size_t endTime) {
-    std::map<size_t, size_t> *occupied = nullptr;
+    boost::icl::interval_set<size_t> *occupied;
     if (direction == Map::Direction::NONE) {
         occupied = nodes[pos.first][pos.second].occupied;
     } else {
@@ -35,58 +33,73 @@ bool Solver::isOccupied(std::pair<size_t, size_t> pos, Map::Direction direction,
 }
 
 std::pair<size_t, size_t>
-Solver::findNotOccupiedInterval(std::map<size_t, size_t> *occupied, size_t startTime, size_t endTime) {
+Solver::findNotOccupiedInterval(boost::icl::interval_set<size_t> *occupied, size_t startTime, size_t endTime) {
     if (!occupied || occupied->empty()) return {0, std::numeric_limits<size_t>::max()};
-    auto it = occupied->upper_bound(startTime);
+    auto interval = boost::icl::discrete_interval<size_t>(startTime, endTime);
+
+    // find the interval [a,b) > [startTime, endTime)
+    auto it = occupied->upper_bound(interval);
     if (it != occupied->begin()) --it;
+
     for (; it != occupied->end(); ++it) {
-        if (endTime <= it->first) {
-            if (it == occupied->begin()) return {0, it->first};
-            auto it2 = std::prev(it);
-            return {it2->second, it->first};
+        if (boost::icl::intersects(interval, *it)) {
+            return {0, 0};
         }
-        if (startTime < it->second) return {0, 0};
+        if (endTime <= it->lower()) {
+            // we find an interval [startTime, endTime) <= [a,b)
+            if (it == occupied->begin()) {
+                // the first interval is after [startTime, endTime)
+                return {0, it->lower()};
+            }
+            auto it2 = std::prev(it);
+            // use the previous interval's upper bound as the result's lower bound
+            return {it2->upper(), it->lower()};
+        }
     }
     // startTime > last occupied interval
     --it;
-    return {it->second, std::numeric_limits<size_t>::max()};
+    return {it->upper(), std::numeric_limits<size_t>::max()};
 }
 
-std::pair<size_t, size_t> Solver::findNotOccupiedInterval(std::map<size_t, size_t> *occupied, size_t startTime) {
+std::pair<size_t, size_t> Solver::findNotOccupiedInterval(boost::icl::interval_set<size_t> *occupied, size_t startTime) {
     return findNotOccupiedInterval(occupied, startTime, startTime + 1);
 }
 
 
 // find the smallest newTime >= startTime so that [newTime, newTime + duration) is not occupied
-size_t Solver::findFirstNotOccupiedTimestamp(std::map<size_t, size_t> *occupied, size_t startTime, size_t duration) {
+size_t Solver::findFirstNotOccupiedTimestamp(boost::icl::interval_set<size_t> *occupied, size_t startTime, size_t duration) {
     if (!occupied || occupied->empty()) return startTime;
-    auto it = occupied->upper_bound(startTime);
+    auto interval = boost::icl::discrete_interval<size_t>(startTime, startTime + duration);
+
+    auto it = occupied->upper_bound(interval);
     if (it != occupied->begin()) --it;
     size_t newTime = startTime;
     for (; it != occupied->end(); ++it) {
-        if (startTime <= newTime && newTime + duration <= it->first) {
+        if (startTime <= newTime && newTime + duration <= it->lower()) {
             return newTime;
         }
-        newTime = it->second;
+        newTime = it->upper();
     }
     return std::max(startTime, newTime);
 }
 
 // find the smallest newTime >= startTime so that [newTime, newTime + duration) is not occupied,
 // and newTime + duration is not occupied2
-size_t Solver::findFirstNotOccupiedTimestamp(std::map<size_t, size_t> *occupied, std::map<size_t, size_t> *occupied2,
+size_t Solver::findFirstNotOccupiedTimestamp(boost::icl::interval_set<size_t> *occupied, boost::icl::interval_set<size_t> *occupied2,
                                              size_t startTime, size_t duration) {
     if (!occupied || occupied->empty()) {
         return findFirstNotOccupiedTimestamp(occupied2, startTime + duration, 1) - duration;
     }
-    auto it = occupied->upper_bound(startTime);
+    auto interval = boost::icl::discrete_interval<size_t>(startTime, startTime + duration);
+
+    auto it = occupied->upper_bound(interval);
     if (it != occupied->begin()) --it;
     size_t newTime = startTime;
     for (; it != occupied->end(); ++it) {
-        if (startTime <= newTime && newTime + duration <= it->first && !isOccupied(occupied2, newTime + duration)) {
+        if (startTime <= newTime && newTime + duration <= it->lower() && !isOccupied(occupied2, newTime + duration)) {
             return newTime;
         }
-        newTime = it->second;
+        newTime = it->upper();
     }
     return findFirstNotOccupiedTimestamp(occupied2, std::max(startTime, newTime) + duration, 1) - duration;
 }
@@ -344,7 +357,6 @@ Solver::VirtualNode *Solver::step() {
     }
 
 
-
     if (algorithmId == 0) {
         bool waitFlag = false;
 //        bool waitFlag = true;
@@ -359,7 +371,7 @@ Solver::VirtualNode *Solver::step() {
             size_t cv = 0;
             if (neighborNode.occupied && !neighborNode.occupied->empty()) {
                 auto it2 = neighborNode.occupied->rbegin();
-                cv = it2->second;
+                cv = it2->upper();
             }
             if (((vNode->parent && p.second != vNode->parent->pos) || !vNode->parent) && vNode->leaveTime + 1 < cv) {
                 waitFlag = true;
@@ -387,15 +399,16 @@ Solver::VirtualNode *Solver::step() {
 //            }
         }
 
-    }
-    else if (algorithmId == 1) {
+    } else if (algorithmId == 1) {
         if (!vNode->hasChild) {
             for (auto direction : Map::directions) {
                 auto &edge = node.edges[(size_t) direction];
                 if (!edge.available) continue; // no node
                 auto p = map->getPosByDirection(vNode->pos, direction);
                 auto &neighborNode = nodes[p.second.first][p.second.second];
-                if (vNode->parent && p.second == vNode->parent->pos && vNode->checkpoint == vNode->parent->checkpoint) continue; // v_n=v_p
+                if (vNode->parent && p.second == vNode->parent->pos &&
+                    vNode->checkpoint == vNode->parent->checkpoint)
+                    continue; // v_n=v_p
 
                 auto newTime = findFirstNotOccupiedTimestamp(edge.occupied, neighborNode.occupied, vNode->leaveTime, 1);
                 auto waitInterval = findNotOccupiedInterval(node.occupied, vNode->leaveTime, newTime);
@@ -406,7 +419,8 @@ Solver::VirtualNode *Solver::step() {
 //                }
 
                 if (newTime < std::numeric_limits<size_t>::max() / 2 && waitInterval.first < waitInterval.second) {
-                    auto newNode = createVirtualNode(vNode->pos, newTime, vNode->parent, vNode->checkpoint, p.second, true);
+                    auto newNode = createVirtualNode(vNode->pos, newTime, vNode->parent, vNode->checkpoint, p.second,
+                                                     true);
                     addVirtualNodeToList(open, newNode, true);
                 }
             }
@@ -416,9 +430,10 @@ Solver::VirtualNode *Solver::step() {
             auto &neighborNode = nodes[vNode->child.first][vNode->child.second];
 
             if (neighborNode.occupied && !neighborNode.occupied->empty()) {
-                auto it2 = neighborNode.occupied->upper_bound(vNode->leaveTime + 1);
+                auto interval = boost::icl::discrete_interval<size_t>(vNode->leaveTime + 1, vNode->leaveTime + 2);
+                auto it2 = neighborNode.occupied->upper_bound(interval);
                 if (it2 != neighborNode.occupied->end()) {
-                    auto newTime = findFirstNotOccupiedTimestamp(edge.occupied, neighborNode.occupied, it2->first, 1);
+                    auto newTime = findFirstNotOccupiedTimestamp(edge.occupied, neighborNode.occupied, it2->lower(), 1);
                     auto waitInterval = findNotOccupiedInterval(node.occupied, vNode->leaveTime, newTime);
 //                    std::cout << vNode->leaveTime << " " << it2->first << " " << newTime << std::endl;
 
@@ -428,7 +443,8 @@ Solver::VirtualNode *Solver::step() {
 //                    }
 
                     if (newTime < std::numeric_limits<size_t>::max() / 2 && waitInterval.first < waitInterval.second) {
-                        auto newNode = createVirtualNode(vNode->pos, newTime, vNode->parent, vNode->checkpoint, vNode->child, true);
+                        auto newNode = createVirtualNode(vNode->pos, newTime, vNode->parent, vNode->checkpoint,
+                                                         vNode->child, true);
                         addVirtualNodeToList(open, newNode, true);
                     }
                 }
