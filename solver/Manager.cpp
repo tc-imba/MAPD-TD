@@ -758,8 +758,8 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
                        std::vector<std::pair<size_t, double> >(agents.size()));
 
     // test whether <start, end> of a task is occupied by an agent
-    const auto notOccupied = std::make_pair(std::numeric_limits<size_t>::max(), std::numeric_limits<size_t>::max());
-    std::vector<std::pair<size_t, size_t >> occupiedAgent(tasks.size(), notOccupied);
+//    const auto notOccupied = std::make_pair(std::numeric_limits<size_t>::max(), std::numeric_limits<size_t>::max());
+//    std::vector<std::pair<size_t, size_t >> occupiedAgent(tasks.size(), notOccupied);
 
     for (size_t i = 0; i < agents.size(); i++) {
 
