@@ -88,7 +88,7 @@ private:
 
     void selectTask(Solver &solver);
 
-    void assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector, size_t occupiedAgent);
+    bool assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector, size_t occupiedAgent);
 
     std::vector<Constraint> generateConstraints(Map *map, Agent &agent, const std::vector<PathNode> &vector);
 

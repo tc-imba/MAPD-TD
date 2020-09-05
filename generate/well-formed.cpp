@@ -11,6 +11,7 @@
 
 #include "../solver/Manager.h"
 #include "../solver/Solver.h"
+#include "../utils/ezOptionParser.hpp"
 
 using namespace std;
 
@@ -51,26 +52,49 @@ size_t calculateDistance(Solver &solver) {
 }
 
 
-int main() {
+int main(int argc, const char *argv[]) {
+    ez::ezOptionParser optionParser;
+
+    optionParser.overview = "Multi Agent Path Finding Well Formed Task Generation";
+    optionParser.syntax = "./MAPF-generate-well-formed [OPTIONS]";
+    optionParser.example = "./MAPF-generate-well-formed";
+    optionParser.footer = "";
+
+    optionParser.add("10", false, 1, 0, "Agent Number", "-a", "--agent");
+    optionParser.add("2", false, 1, 0, "Task Number Per Agent", "-k", "--agent-per-task");
+    optionParser.add("", false, 0, 0, "Generate Release Time", "-r", "--release");
+
+    optionParser.add("5", false, 1, 0, "X Grid", "-x");
+    optionParser.add("2", false, 1, 0, "Y Grid", "-y");
+
+    optionParser.parse(argc, argv);
+
+    unsigned long agentNum, k, deliveryX, deliveryY;
+    bool release;
+
+    optionParser.get("--agent")->getULong(agentNum);
+    optionParser.get("--agent-per-task")->getULong(k);
+    optionParser.get("-x")->getULong(deliveryX);
+    optionParser.get("-y")->getULong(deliveryY);
+    release = optionParser.isSet("--release");
+
+
     string dataPath = "test-benchmark";
 
     size_t deliveryWidth = 10;
-    size_t deliveryX = 8;
-    size_t deliveryY = 3;
+//    size_t deliveryX = 8;
+//    size_t deliveryY = 3;
     size_t maxX = 4 * deliveryX + 1;
     size_t maxY = deliveryY * (deliveryWidth + 1) + 13;
 
     string mapName = generateMap(dataPath, deliveryWidth, deliveryX, deliveryY, maxX, maxY);
 
-    size_t agentNum = 100;
-    size_t k = 2;
-    bool release = false;
-
     string filename = dataPath + "/task/" + mapName + "-" + to_string(agentNum) + "-" + to_string(k);
     if (release) {
         filename += "-release";
     }
-    filename +=  ".task";
+    filename += ".task";
+    cout << filename << endl;
     ofstream fout(filename);
 
 //    std::mt19937 g(0);
@@ -127,7 +151,7 @@ int main() {
 
 
             taskConfigs << evenPoint.first << " " << evenPoint.second << " "
-                        << oddPoint.first << " " << oddPoint.second << " " << dist << " " << startTime <<  endl;
+                        << oddPoint.first << " " << oddPoint.second << " " << dist << " " << startTime << endl;
 
             firstPoint = oddPoint;
             if (release) {

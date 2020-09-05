@@ -81,7 +81,8 @@ int main(int argc, const char *argv[]) {
     std::ofstream fout;
     if (!outputFile.empty()) {
         if (outputFile == "auto") {
-            outputFile = generateOutputFileName(scheduler, algorithmId, boundFlag, sortFlag, multiLabelFlag, deadlineBoundFlag);
+            outputFile = generateOutputFileName(scheduler, algorithmId, boundFlag, sortFlag, multiLabelFlag,
+                                                deadlineBoundFlag);
         }
         fout.open(outputFile);
         std::cout.rdbuf(fout.rdbuf());
