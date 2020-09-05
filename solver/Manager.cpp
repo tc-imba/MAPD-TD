@@ -199,7 +199,7 @@ void Manager::applyReservedPath() {
     for (size_t i = 0; i < agents.size(); i++) {
         auto &agent = agents[i];
         if (!agent.reservedPath.empty()) {
-            std::cerr << "apply: " << i << std::endl;
+//            std::cerr << "apply: " << i << std::endl;
             agent.path.insert(agent.path.end(), agent.reservedPath.begin(), agent.reservedPath.end());
         }
     }
@@ -426,7 +426,7 @@ bool Manager::reservePath(Solver &solver, size_t i) {
 
     agent.reservedPath.swap(path);
 //    map->addWaitingAgent(agent.currentPos, agent.lastTimeStamp, i);
-    std::cerr << "reserve: " << i << std::endl;
+//    std::cerr << "reserve: " << i << std::endl;
     return true;
 }
 
@@ -461,7 +461,7 @@ bool Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector
     map->removeInfiniteWaiting(agent.originPos);
     if (!agent.reservedPath.empty()) {
         removeAgentPathConstraints(map, agent, agent.reservedPath);
-        std::cerr << "clear: " << i << std::endl;
+//        std::cerr << "clear: " << i << std::endl;
     }
     addAgentPathConstraints(map, agent, vector);
 
@@ -518,12 +518,12 @@ bool Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector
             }
             agent.path.insert(agent.path.end(), vector.begin(), vector.end());
             map->addWaitingAgent(agent.currentPos, agent.lastTimeStamp, i);
-            std::cerr << "success: " << i << " reserved: ";
+//            std::cerr << "success: " << i << " reserved: ";
             for (auto &p : savedAgents) {
                 agentMaxTimestamp = std::max(agentMaxTimestamp, agents[p.first].reservedPath.back().leaveTime);
-                std::cerr << p.first << " ";
+//                std::cerr << p.first << " ";
             }
-            std::cerr << std::endl;
+//            std::cerr << std::endl;
         } else {
 //            exit(-1);
             // revert the agent position for failed task

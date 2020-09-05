@@ -93,6 +93,34 @@ void Map::removeNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, si
     removeEdgeOccupied(pos, Map::Direction::NONE, startTime, endTime);
 }
 
+static void addOccupied(std::pair<size_t, size_t> pos, Map::Direction direction,
+                        boost::icl::interval_set<size_t> &occupied,
+                        boost::icl::discrete_interval<size_t> &interval) {
+/*    if (pos.first == 7 && pos.second == 5 && direction == Map::Direction::NONE) {
+        std::cerr << "add " << interval << " to " << occupied << std::endl;
+    }
+    if (boost::icl::intersects(occupied, interval)) {
+        std::cerr << "add error: " << pos.first << " " << pos.second << " "
+                  << occupied << " " << interval << std::endl;
+        exit(0);
+    }*/
+    occupied.add(interval);
+}
+
+static void removeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction,
+                           boost::icl::interval_set<size_t> &occupied,
+                           boost::icl::discrete_interval<size_t> &interval) {
+/*    if (pos.first == 7 && pos.second == 5 && direction == Map::Direction::NONE) {
+        std::cerr << "remove " << interval << std::endl;
+    }
+    if (!boost::icl::contains(occupied, interval)) {
+        std::cerr << "remove error: " << pos.first << " " << pos.second << " "
+                  << occupied << " " << interval << std::endl;
+        exit(0);
+    }*/
+    occupied.subtract(interval);
+}
+
 size_t Map::addInfiniteWaiting(std::pair<size_t, size_t> pos, size_t startTime) {
     OccupiedKey key = {pos, Map::Direction::NONE};
     size_t infinite = std::numeric_limits<size_t>::max() / 2;
@@ -101,16 +129,22 @@ size_t Map::addInfiniteWaiting(std::pair<size_t, size_t> pos, size_t startTime) 
         if (it != occupiedMap.end()) {
             auto occupied = &it->second->rangeConstraints;
             if (!occupied->empty()) {
-                auto it2 = --occupied->end();
+                auto it2 = occupied->rbegin();
                 if (it2->upper() < infinite) {
-                    auto interval = boost::icl::discrete_interval<size_t>(it2->upper() + 1, infinite);
-                    occupied->add(interval);
-                    return it2->upper() + 1;
+                    startTime = it2->upper() + 1;
+                    auto interval = boost::icl::discrete_interval<size_t>(startTime, infinite);
+                    addOccupied(pos, Map::Direction::NONE, *occupied, interval);
+                    it->second->infiniteWaiting = startTime;
+                    return startTime;
                 }
             }
         }
     }
     addNodeOccupied(pos, startTime, infinite);
+    auto it = occupiedMap.find(key);
+    if (it != occupiedMap.end()) {
+        it->second->infiniteWaiting = startTime;
+    }
     return startTime;
 }
 
@@ -121,10 +155,17 @@ size_t Map::removeInfiniteWaiting(std::pair<size_t, size_t> pos) {
     if (it != occupiedMap.end()) {
         auto occupied = &it->second->rangeConstraints;
         if (!occupied->empty()) {
-            auto it2 = --occupied->end();
+            auto it2 = occupied->rbegin();
             if (it2->upper() >= infinite) {
                 size_t result = it2->lower();
-                occupied->erase(it2);
+                if (result < it->second->infiniteWaiting) {
+                    result = it->second->infiniteWaiting;
+                }
+                auto interval = boost::icl::discrete_interval<size_t>(it2->lower(), it2->upper());
+//                    std::cerr << "infinite waiting error: " << it2->lower() << " " << it->second->infiniteWaiting << std::endl;
+                removeOccupied(pos, Map::Direction::NONE, *occupied, interval);
+//                occupied->subtract(interval);
+//                occupied->erase(it2);
                 return result;
             }
         }
@@ -153,15 +194,17 @@ void Map::addEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction directio
     auto it = occupiedMap.find(key);
     if (it == occupiedMap.end()) {
         auto occupied = std::make_unique<OccupiedValue>();
-        occupied->rangeConstraints.add(interval);
+        addOccupied(pos, direction, occupied->rangeConstraints, interval);
         occupiedMap.emplace_hint(it, key, std::move(occupied));
     } else {
         auto occupied = it->second.get();
-        if (boost::icl::intersects(occupied->rangeConstraints, interval)) {
-            std::cerr << "add error: " << occupied->rangeConstraints << std::endl << startTime << " " << endTime
-                      << std::endl;
-        }
-        occupied->rangeConstraints.add(interval);
+//        if (boost::icl::intersects(occupied->rangeConstraints, interval)) {
+//            std::cerr << "add error: " << pos.first << " " << pos.second << " "
+//                      << occupied->rangeConstraints << " " << startTime << " " << endTime
+//                      << std::endl;
+//            exit(0);
+//        }
+        addOccupied(pos, direction, occupied->rangeConstraints, interval);
     }
 }
 
@@ -183,10 +226,12 @@ void Map::removeEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction direc
     auto it = occupiedMap.find(key);
     if (it != occupiedMap.end()) {
         auto &occupied = it->second->rangeConstraints;
-        if (!boost::icl::contains(occupied, interval)) {
-            std::cerr << "remove error: " << occupied << std::endl << startTime << " " << endTime << std::endl;
-        }
-        occupied.subtract(interval);
+//        if (!boost::icl::contains(occupied, interval)) {
+//            std::cerr << "remove error: " << pos.first << " " << pos.second << " "
+//                      << occupied << " " << startTime << " " << endTime << std::endl;
+//            exit(0);
+//        }
+        removeOccupied(pos, direction, occupied, interval);
     } else {
         std::cerr << "remove error: not found" << std::endl;
     }

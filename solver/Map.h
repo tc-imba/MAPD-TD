@@ -45,6 +45,7 @@ public:
 
     struct OccupiedValue {
         boost::icl::interval_set<size_t> rangeConstraints;
+        size_t infiniteWaiting = 0;
         std::map<size_t, size_t> waitingAgents;
     };
 
