@@ -104,20 +104,19 @@ static void addOccupied(std::pair<size_t, size_t> pos, Map::Direction direction,
                   << occupied << " " << interval << std::endl;
         exit(0);
     }*/
+//    std::cout << "add " << interval << " to " << occupied << std::endl;
     occupied.add(interval);
 }
 
 static void removeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction,
                            boost::icl::interval_set<size_t> &occupied,
                            boost::icl::discrete_interval<size_t> &interval) {
-/*    if (pos.first == 7 && pos.second == 5 && direction == Map::Direction::NONE) {
-        std::cerr << "remove " << interval << std::endl;
-    }
-    if (!boost::icl::contains(occupied, interval)) {
+/*    if (!boost::icl::contains(occupied, interval)) {
         std::cerr << "remove error: " << pos.first << " " << pos.second << " "
                   << occupied << " " << interval << std::endl;
         exit(0);
     }*/
+//    std::cout << "remove " << interval << " from " << occupied << std::endl;
     occupied.subtract(interval);
 }
 
@@ -161,7 +160,7 @@ size_t Map::removeInfiniteWaiting(std::pair<size_t, size_t> pos) {
                 if (result < it->second->infiniteWaiting) {
                     result = it->second->infiniteWaiting;
                 }
-                auto interval = boost::icl::discrete_interval<size_t>(it2->lower(), it2->upper());
+                auto interval = boost::icl::discrete_interval<size_t>(result, it2->upper());
 //                    std::cerr << "infinite waiting error: " << it2->lower() << " " << it->second->infiniteWaiting << std::endl;
                 removeOccupied(pos, Map::Direction::NONE, *occupied, interval);
 //                occupied->subtract(interval);
@@ -339,11 +338,13 @@ void Map::printOccupied(std::map<size_t, size_t> *occupied) {
     }
 }
 
-void Map::printOccupiedMap() const {
+std::string Map::printOccupiedMap() const {
+    std::ostringstream oss;
     for (auto it = occupiedMap.begin(); it != occupiedMap.end(); ++it) {
-        std::cerr << it->first.pos.first << " " << it->first.pos.second << " " << (int) it->first.direction << ": ";
-        std::cerr << it->second->rangeConstraints << std::endl;
+        oss << it->first.pos.first << " " << it->first.pos.second << " " << (int) it->first.direction << ": ";
+        oss << it->second->rangeConstraints << std::endl;
     }
+    return oss.str();
 }
 
 size_t Map::getDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end) {

@@ -1,8 +1,9 @@
 import os
 
+name = "result"
 project_root = os.path.dirname(os.path.dirname(__file__))
 experiment_dir = os.path.dirname(__file__)
-result_dir = os.path.join(project_root, "result")
+result_dir = os.path.join(project_root, name)
 
 
 def parse(filename):
@@ -35,7 +36,7 @@ def main():
     header = ["size", "agent", "agent_per_task", "phi", "scheduler",
               "bound", "sort", "mlabel", "task_num", "task_success", "time_ms"]
 
-    with open(os.path.join(experiment_dir, "result.csv"), "w") as f:
+    with open(os.path.join(experiment_dir, name+".csv"), "w") as f:
         f.write(",".join(header) + "\n")
         for filename in sorted(os.listdir(result_dir)):
             row = parse(filename)

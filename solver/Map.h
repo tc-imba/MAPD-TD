@@ -97,7 +97,7 @@ public:
 
     static void printOccupied(std::map<size_t, size_t> *occupied);
 
-    void printOccupiedMap() const;
+    std::string printOccupiedMap() const;
 
     static size_t getDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
 };

@@ -8,7 +8,7 @@ program = os.path.join(project_root, "cmake-build-release", "MAPF")
 data_root = os.path.join(project_root, "test-benchmark")
 result_dir = os.path.join(project_root, "result")
 os.makedirs(result_dir, exist_ok=True)
-workers = 10
+workers = 20
 
 
 async def run(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex",
@@ -42,11 +42,16 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex",
         await asyncio.sleep(1)
 
     workers -= 1
+    p = None
     try:
         p = await asyncio.create_subprocess_exec(program, *args, stderr=subprocess.PIPE)
         await asyncio.wait_for(p.communicate(), timeout=300)
     except asyncio.TimeoutError:
         print('timeout!')
+    except:
+        pass
+    try:
+        p.kill()
     except:
         pass
     workers += 1
@@ -79,8 +84,12 @@ async def run_agent(size=(21, 35), agent=10):
 
 
 async def main():
-    for agent in [30]:
-        await run_agent(size=(21, 35), agent=agent)
+    tasks = []
+    # for agent in [10, 20, 30, 40, 50]:
+    #     tasks.append(run_agent(size=(21, 35), agent=agent))
+    for agent in [60, 90, 120, 150, 180]:
+        tasks.append(run_agent(size=(33, 46), agent=agent))
+    await asyncio.gather(*tasks)
 
 
 if __name__ == '__main__':
