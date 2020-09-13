@@ -81,12 +81,13 @@ private:
     bool multiLabelFlag;
     bool occupiedFlag;
     bool deadlineBoundFlag;
+    bool recalculateFlag;
 
     void applyReservedPath();
 
     void computeFlex(Solver &solver, int x, double phi);
 
-    void selectTask(Solver &solver);
+    void selectTask(Solver &solver, int x, double phi);
 
     bool assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector, size_t occupiedAgent);
 
@@ -106,7 +107,7 @@ private:
                                           size_t startTime, size_t deadline);
 
     size_t computeAgentForTask(Solver &solver, size_t j, const std::vector<std::pair<size_t, double> > &sortAgent,
-                               double phi, double &minBeta, Count &count);
+                               double phi, double &minBeta, size_t &minBetaTask, Count &count, bool recalculate = false);
 
     bool isPathConflict(Solver &solver, Agent &agent, const std::vector<PathNode> &vector);
 
@@ -114,7 +115,7 @@ public:
     explicit Manager(std::string dataPath, size_t maxStep = 10000,
                      bool boundFlag = true, bool sortFlag = true,
                      bool multiLabelFlag = true, bool occupiedFlag = true,
-                     bool deadlineBoundFlag = true);
+                     bool deadlineBoundFlag = true, bool recalculateFlag = true);
 
     Map *getMap(const std::string &mapName);
 
