@@ -16,13 +16,14 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex",
     # os.chdir(project_root)
     base_filename = "%d-%d-%d-%d" % (size[0], size[1], agent, task_per_agent)
     task_filename = "task/well-formed-%s.task" % base_filename
-    output_filename = "%s-%s-%s" % (base_filename, scheduler, phi)
+    output_filename = "%s-%s-%s" % (base_filename, scheduler, phi >= 0 and str(phi) or 'n' + str(-phi))
     args = [
         program,
         "--data", data_root,
         "--task", task_filename,
         "--scheduler", scheduler,
         "--phi", str(phi),
+        "--recalculate",
     ]
     if bound:
         args.append("--bound")
@@ -45,7 +46,7 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex",
     p = None
     try:
         p = await asyncio.create_subprocess_exec(program, *args, stderr=subprocess.PIPE)
-        await asyncio.wait_for(p.communicate(), timeout=300)
+        await asyncio.wait_for(p.communicate(), timeout=3000)
     except asyncio.TimeoutError:
         print('timeout!')
     except:
@@ -58,7 +59,7 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex",
 
 
 async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex"):
-    for phi in [0, 0.1, 0.25]:
+    for phi in [-0.25, -0.1, 0, 0.1, 0.25]:
         _run = functools.partial(run, size=size, agent=agent, task_per_agent=task_per_agent, scheduler=scheduler,
                                  phi=phi)
         await asyncio.gather(

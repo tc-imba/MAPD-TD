@@ -1,6 +1,6 @@
 import os
 
-name = "result"
+name = "result-small-new"
 project_root = os.path.dirname(os.path.dirname(__file__))
 experiment_dir = os.path.dirname(__file__)
 result_dir = os.path.join(project_root, name)
@@ -11,8 +11,8 @@ def parse(filename):
     size = args[0] + "x" + args[1]
     agent = args[2]
     agent_per_task = args[3]
-    phi = args[4]
-    scheduler = args[5]
+    scheduler = args[4]
+    phi = args[5].replace('n', '-')
     bound = str("bound" in args)
     sort = str("sort" in args)
     mlabel = str("mlabel" in args)
@@ -33,7 +33,7 @@ def parse(filename):
 
 
 def main():
-    header = ["size", "agent", "agent_per_task", "phi", "scheduler",
+    header = ["size", "agent", "task_per_agent", "phi", "scheduler",
               "bound", "sort", "mlabel", "task_num", "task_success", "time_ms"]
 
     with open(os.path.join(experiment_dir, name+".csv"), "w") as f:
