@@ -1,6 +1,7 @@
 import os
+import matplotlib.pyplot as plt
 
-name = "result-big-new"
+name = "result-small-new"
 project_root = os.path.dirname(os.path.dirname(__file__))
 experiment_dir = os.path.dirname(__file__)
 result_dir = os.path.join(project_root, name)
@@ -32,6 +33,22 @@ def parse(filename):
             str(task_num), str(task_success), str(time_ms)]
 
 
+def plot(phi, data):
+    filename = os.path.join(experiment_dir, name + '-' + phi.replace('-', 'n') + ".png")
+    data.sort(key=lambda x: int(x[0]))
+    task = list(map(lambda x: int(x[0]), data))
+    edf = list(map(lambda x: int(x[1]) / int(x[0]), data))
+    flex = list(map(lambda x: int(x[2]) / int(x[0]), data))
+    plt.figure()
+    plt.plot(task, edf, label="edf", marker="o")
+    plt.plot(task, flex, label="flex", marker="x")
+    plt.xlabel('tasks')
+    plt.ylabel('success rate')
+    plt.legend()
+    plt.title(name + ': phi = ' + phi)
+    plt.savefig(filename)
+
+
 def main():
     header = ["size", "agent", "task_per_agent", "phi", "scheduler",
               "bound", "sort", "mlabel", "task_num", "task_success", "time_ms"]
@@ -45,7 +62,7 @@ def main():
             row = parse(filename)
             if row[5] == 'True' and row[6] == 'True' and row[7] == 'True':
                 data.append(row)
-                result_dict[row[3]] = 0
+                result_dict[row[3]] = []
             f.write(",".join(row) + "\n")
 
     data_dict = {}
@@ -55,14 +72,13 @@ def main():
             data_dict[key] = row[-2]
         else:
             prev = data_dict[key]
-            if row[-2] == prev:
-                continue
-            if (row[-2] > prev and row[4] == 'flex') or (row[-2] < prev and row[4] == 'edf'):
-                result_dict[row[3]] += 1
+            if row[4] == 'flex':
+                result_dict[row[3]].append((row[-3], prev, row[-2]))
             else:
-                result_dict[row[3]] -= 1
+                result_dict[row[3]].append((row[-3], row[-2], prev))
 
-    print(result_dict)
+    for i, (phi, data) in enumerate(result_dict.items()):
+        plot(phi, data)
 
 
 if __name__ == '__main__':
