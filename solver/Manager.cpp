@@ -170,7 +170,7 @@ void Manager::earliestDeadlineFirstAssign(Map *map, int algorithm, double phi) {
         double minBeta = -1;
         size_t minBetaTask = std::numeric_limits<size_t>::max();
         Count count;
-        auto selectedAgent = computeAgentForTask(solver, j, sortAgent, phi, minBeta, minBetaTask, count);
+        auto selectedAgent = computeAgentForTask(solver, j, sortAgent, phi, minBeta, minBetaTask, count, recalculateFlag);
         std::cout << "calculate: " << count.calculate << ", skip: " << count.skip << ", step: " << count.step
                   << std::endl;
 

@@ -71,7 +71,7 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex"):
 
 async def run_scheduler(size=(21, 35), agent=10, task_per_agent=2):
     await asyncio.gather(
-        run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex"),
+        # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex"),
         run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="edf"),
     )
 
