@@ -1,6 +1,6 @@
 import os
 
-name = "result-small-new"
+name = "result-big-new"
 project_root = os.path.dirname(os.path.dirname(__file__))
 experiment_dir = os.path.dirname(__file__)
 result_dir = os.path.join(project_root, name)
@@ -36,11 +36,33 @@ def main():
     header = ["size", "agent", "task_per_agent", "phi", "scheduler",
               "bound", "sort", "mlabel", "task_num", "task_success", "time_ms"]
 
-    with open(os.path.join(experiment_dir, name+".csv"), "w") as f:
+    data = []
+    result_dict = {}
+
+    with open(os.path.join(experiment_dir, name + ".csv"), "w") as f:
         f.write(",".join(header) + "\n")
         for filename in sorted(os.listdir(result_dir)):
             row = parse(filename)
+            if row[5] == 'True' and row[6] == 'True' and row[7] == 'True':
+                data.append(row)
+                result_dict[row[3]] = 0
             f.write(",".join(row) + "\n")
+
+    data_dict = {}
+    for row in data:
+        key = '-'.join(row[:4])
+        if key not in data_dict:
+            data_dict[key] = row[-2]
+        else:
+            prev = data_dict[key]
+            if row[-2] == prev:
+                continue
+            if (row[-2] > prev and row[4] == 'flex') or (row[-2] < prev and row[4] == 'edf'):
+                result_dict[row[3]] += 1
+            else:
+                result_dict[row[3]] -= 1
+
+    print(result_dict)
 
 
 if __name__ == '__main__':

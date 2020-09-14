@@ -86,10 +86,10 @@ async def run_agent(size=(21, 35), agent=10):
 
 async def main():
     tasks = []
-    # for agent in [10, 20, 30, 40, 50]:
-    #     tasks.append(run_agent(size=(21, 35), agent=agent))
-    for agent in [60, 90, 120, 150, 180]:
-        tasks.append(run_agent(size=(33, 46), agent=agent))
+    for agent in [10, 20, 30, 40, 50]:
+        tasks.append(run_agent(size=(21, 35), agent=agent))
+    # for agent in [60, 90, 120, 150, 180]:
+    #     tasks.append(run_agent(size=(33, 46), agent=agent))
     await asyncio.gather(*tasks)
 
 
