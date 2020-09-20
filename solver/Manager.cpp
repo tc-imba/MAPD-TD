@@ -13,11 +13,12 @@
 
 Manager::Manager(std::string dataPath, size_t maxStep,
                  bool boundFlag, bool sortFlag, bool multiLabelFlag, bool occupiedFlag, bool deadlineBoundFlag,
-                 bool recalculateFlag)
+                 bool recalculateFlag, bool reserveAllFlag)
         : dataPath(std::move(dataPath)), maxStep(maxStep),
           boundFlag(boundFlag), sortFlag(sortFlag),
           multiLabelFlag(multiLabelFlag), occupiedFlag(occupiedFlag),
-          deadlineBoundFlag(deadlineBoundFlag), recalculateFlag(recalculateFlag) {}
+          deadlineBoundFlag(deadlineBoundFlag), recalculateFlag(recalculateFlag),
+          reserveAllFlag(reserveAllFlag) {}
 
 Map *Manager::loadMapFile(const std::string &mapName) {
     auto filePath = dataPath + "/map/" + mapName;
@@ -170,7 +171,8 @@ void Manager::earliestDeadlineFirstAssign(Map *map, int algorithm, double phi) {
         double minBeta = -1;
         size_t minBetaTask = std::numeric_limits<size_t>::max();
         Count count;
-        auto selectedAgent = computeAgentForTask(solver, j, sortAgent, phi, minBeta, minBetaTask, count, recalculateFlag);
+        auto selectedAgent = computeAgentForTask(solver, j, sortAgent, phi, minBeta, minBetaTask, count,
+                                                 recalculateFlag);
         std::cout << "calculate: " << count.calculate << ", skip: " << count.skip << ", step: " << count.step
                   << std::endl;
 
@@ -498,21 +500,25 @@ bool Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector
 
     std::set<size_t> reservingAgentSet;
     if (occupiedFlag) {
-        for (auto &node : vector) {
-            auto j = map->getLastWaitingAgent(node.pos);
-            if (j >= agents.size()) continue;
-            if (!agents[j].reservedPath.empty() || agents[j].lastTimeStamp > node.leaveTime) continue;
-            if (agents[j].originPos == node.pos) continue;
-            reservingAgentSet.emplace(j);
-        }
-        if (occupiedAgent < agents.size() && occupiedAgent != i) {
-            size_t reservingAgent;
-            if (agent.lastTimeStamp < agents[occupiedAgent].lastTimeStamp) {
-                reservingAgent = i;
-            } else {
-                reservingAgent = occupiedAgent;
+        if (reserveAllFlag) {
+            reservingAgentSet.emplace(i);
+        } else {
+            for (auto &node : vector) {
+                auto j = map->getLastWaitingAgent(node.pos);
+                if (j >= agents.size()) continue;
+                if (!agents[j].reservedPath.empty() || agents[j].lastTimeStamp > node.leaveTime) continue;
+                if (agents[j].originPos == node.pos) continue;
+                reservingAgentSet.emplace(j);
             }
-            reservingAgentSet.emplace(reservingAgent);
+            if (occupiedAgent < agents.size() && occupiedAgent != i) {
+                size_t reservingAgent;
+                if (agent.lastTimeStamp < agents[occupiedAgent].lastTimeStamp) {
+                    reservingAgent = i;
+                } else {
+                    reservingAgent = occupiedAgent;
+                }
+                reservingAgentSet.emplace(reservingAgent);
+            }
         }
     }
     if (reservingAgentSet.empty()) {
@@ -698,7 +704,7 @@ void Manager::selectTask(Solver &solver, int x, double phi) {
             selectedTask = j;
         }
     }
-    std::cerr << " " << selectedTask <<std::endl;
+    std::cerr << " " << selectedTask << std::endl;
 
     bool taskSuccess = selectedTask < tasks.size();
     if (taskSuccess) {

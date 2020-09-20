@@ -82,6 +82,7 @@ private:
     bool occupiedFlag;
     bool deadlineBoundFlag;
     bool recalculateFlag;
+    bool reserveAllFlag;
 
     void applyReservedPath();
 
@@ -115,7 +116,8 @@ public:
     explicit Manager(std::string dataPath, size_t maxStep = 10000,
                      bool boundFlag = true, bool sortFlag = true,
                      bool multiLabelFlag = true, bool occupiedFlag = true,
-                     bool deadlineBoundFlag = true, bool recalculateFlag = true);
+                     bool deadlineBoundFlag = true, bool recalculateFlag = true,
+                     bool reserveAllFlag = true);
 
     Map *getMap(const std::string &mapName);
 

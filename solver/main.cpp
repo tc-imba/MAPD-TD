@@ -12,7 +12,7 @@
 
 std::string generateOutputFileName(const std::string &scheduler, int algorithmId,
                                    bool boundFlag, bool sortFlag, bool multiLabelFlag, bool deadlineBoundFlag,
-                                   bool recalculateFlag) {
+                                   bool recalculateFlag, bool reserveAllFlag) {
     std::ostringstream oss;
     oss << scheduler << "-algo-" << algorithmId;
     if (boundFlag) {
@@ -29,6 +29,9 @@ std::string generateOutputFileName(const std::string &scheduler, int algorithmId
     }
     if (recalculateFlag) {
         oss << "-recalc";
+    }
+    if (reserveAllFlag) {
+        oss << "-reserve";
     }
     oss << ".txt";
     return oss.str();
@@ -62,12 +65,13 @@ int main(int argc, const char *argv[]) {
     optionParser.add("", false, 0, 0, "Use Multi Label", "-m", "--mlabel");
     optionParser.add("", false, 0, 0, "Use Deadline Bound", "-db", "--deadline-bound");
     optionParser.add("", false, 0, 0, "Recalculate After Flex", "-re", "--recalculate");
+    optionParser.add("", false, 0, 0, "Reserve all", "-ra", "--reserve-all");
     optionParser.parse(argc, argv);
 
     std::string dataPath, taskFile, outputFile, scheduler;
     double phi;
     int algorithmId;
-    bool boundFlag, sortFlag, multiLabelFlag, deadlineBoundFlag, recalculateFlag;
+    bool boundFlag, sortFlag, multiLabelFlag, deadlineBoundFlag, recalculateFlag, reserveAllFlag;
     unsigned long long maxStep;
 
     optionParser.get("--data")->getString(dataPath);
@@ -82,19 +86,20 @@ int main(int argc, const char *argv[]) {
     multiLabelFlag = optionParser.isSet("--mlabel");
     deadlineBoundFlag = optionParser.isSet("--deadline-bound");
     recalculateFlag = optionParser.isSet("--recalculate");
+    reserveAllFlag = optionParser.isSet("--reserve-all");
 
     auto coutBuf = std::cout.rdbuf();
     std::ofstream fout;
     if (!outputFile.empty()) {
         if (outputFile == "auto") {
             outputFile = generateOutputFileName(scheduler, algorithmId, boundFlag, sortFlag, multiLabelFlag,
-                                                deadlineBoundFlag, recalculateFlag);
+                                                deadlineBoundFlag, recalculateFlag, reserveAllFlag);
         }
         fout.open(outputFile);
         std::cout.rdbuf(fout.rdbuf());
     }
 
-    Manager manager(dataPath, maxStep, boundFlag, sortFlag, multiLabelFlag, true, deadlineBoundFlag, recalculateFlag);
+    Manager manager(dataPath, maxStep, boundFlag, sortFlag, multiLabelFlag, true, deadlineBoundFlag, recalculateFlag, reserveAllFlag);
     auto map = manager.loadTaskFile(taskFile);
 
     if (scheduler == "edf") {
