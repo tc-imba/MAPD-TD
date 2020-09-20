@@ -60,6 +60,7 @@ int main(int argc, const char *argv[]) {
     optionParser.example = "./MAPF-generate-well-formed";
     optionParser.footer = "";
 
+    optionParser.add("5489", false, 1, 0, "Random Seed", "-s", "--seed");
     optionParser.add("10", false, 1, 0, "Agent Number", "-a", "--agent");
     optionParser.add("2", false, 1, 0, "Task Number Per Agent", "-k", "--agent-per-task");
     optionParser.add("", false, 0, 0, "Generate Release Time", "-r", "--release");
@@ -69,9 +70,10 @@ int main(int argc, const char *argv[]) {
 
     optionParser.parse(argc, argv);
 
-    unsigned long agentNum, k, deliveryX, deliveryY;
+    unsigned long agentNum, k, deliveryX, deliveryY, seed;
     bool release;
 
+    optionParser.get("--seed")->getULong(seed);
     optionParser.get("--agent")->getULong(agentNum);
     optionParser.get("--agent-per-task")->getULong(k);
     optionParser.get("-x")->getULong(deliveryX);
@@ -89,7 +91,7 @@ int main(int argc, const char *argv[]) {
 
     string mapName = generateMap(dataPath, deliveryWidth, deliveryX, deliveryY, maxX, maxY);
 
-    string filename = dataPath + "/task/" + mapName + "-" + to_string(agentNum) + "-" + to_string(k);
+    string filename = dataPath + "/task/" + mapName + "-" + to_string(agentNum) + "-" + to_string(k) + "-" + to_string(seed);
     if (release) {
         filename += "-release";
     }
@@ -97,8 +99,7 @@ int main(int argc, const char *argv[]) {
     cout << filename << endl;
     ofstream fout(filename);
 
-//    std::mt19937 g(0);
-    std::mt19937 g;
+    std::mt19937 g(seed);
 
     vector<pair<size_t, size_t> > parkingPoints;
     vector<size_t> parkingY = {1, 2, 4, 5, maxY - 6, maxY - 5, maxY - 3, maxY - 2};

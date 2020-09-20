@@ -6,18 +6,20 @@ project_root = os.path.dirname(os.path.dirname(__file__))
 program = os.path.join(project_root, "cmake-build-release", "MAPF-generate-well-formed")
 
 
-def generate(x, y, agent, agent_per_task, release=False):
-    args = [
-        program,
-        "-x", str(x),
-        "-y", str(y),
-        "--agent", str(agent),
-        "--agent-per-task", str(agent_per_task),
-    ]
-    if release:
-        args.append("--release")
-    print(args)
-    subprocess.run(args, stderr=subprocess.PIPE)
+def generate(x, y, agent, agent_per_task, seed, release=False):
+    for seed in range(10):
+        args = [
+            program,
+            "-x", str(x),
+            "-y", str(y),
+            "--agent", str(agent),
+            "--agent-per-task", str(agent_per_task),
+            "--seed", str(seed),
+        ]
+        if release:
+            args.append("--release")
+        print(args)
+        subprocess.run(args, stderr=subprocess.PIPE)
 
 
 def main():

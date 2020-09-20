@@ -11,10 +11,10 @@ os.makedirs(result_dir, exist_ok=True)
 workers = 20
 
 
-async def run(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex",
-              phi=0.2, bound=True, sort=True, mlabel=True):
+async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex",
+              phi=0.2, bound=True, sort=True, mlabel=True, reserve=False):
     # os.chdir(project_root)
-    base_filename = "%d-%d-%d-%d" % (size[0], size[1], agent, task_per_agent)
+    base_filename = "%d-%d-%d-%d-%d" % (size[0], size[1], agent, task_per_agent, seed)
     task_filename = "task/well-formed-%s.task" % base_filename
     output_filename = "%s-%s-%s" % (base_filename, scheduler, phi >= 0 and str(phi) or 'n' + str(-phi))
     args = [
@@ -34,6 +34,9 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex",
     if mlabel:
         args.append("--mlabel")
         output_filename += "-mlabel"
+    if reserve:
+        args.append("--reserve-all")
+        output_filename += "-reserve"
     args += ["--output", os.path.join(result_dir, output_filename)]
     # print(args)
     print(output_filename)
@@ -59,19 +62,24 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex",
 
 
 async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex"):
-    for phi in [-0.25, -0.1, 0, 0.1, 0.25]:
-        _run = functools.partial(run, size=size, agent=agent, task_per_agent=task_per_agent, scheduler=scheduler,
-                                 phi=phi)
-        await asyncio.gather(
-            _run(bound=False, sort=False, mlabel=True),
-            _run(bound=True, sort=False, mlabel=True),
-            _run(bound=True, sort=True, mlabel=True),
-        )
+    # for phi in [-0.25, -0.1, 0, 0.1, 0.25]:
+    tasks = []
+    for seed in range(10):
+        for phi in [-0.25, 0]:
+            _run = functools.partial(run, size=size, agent=agent, task_per_agent=task_per_agent, seed=seed,
+                                     scheduler=scheduler, phi=phi)
+            tasks += [
+                # _run(bound=False, sort=False, mlabel=True),
+                # _run(bound=True, sort=False, mlabel=True),
+                _run(bound=True, sort=True, mlabel=True, reserve=True),
+                _run(bound=True, sort=True, mlabel=True, reserve=False),
+            ]
+    await asyncio.gather(*tasks)
 
 
 async def run_scheduler(size=(21, 35), agent=10, task_per_agent=2):
     await asyncio.gather(
-        # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex"),
+        run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex"),
         run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="edf"),
     )
 
