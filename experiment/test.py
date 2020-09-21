@@ -39,7 +39,6 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex
         output_filename += "-reserve"
     args += ["--output", os.path.join(result_dir, output_filename)]
     # print(args)
-    print(output_filename)
 
     global workers
     while workers <= 0:
@@ -59,13 +58,15 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex
     except:
         pass
     workers += 1
+    print(output_filename)
+
 
 
 async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex"):
     # for phi in [-0.25, -0.1, 0, 0.1, 0.25]:
     tasks = []
     for seed in range(10):
-        for phi in [-0.25, 0]:
+        for phi in [-0.1, 0.1, 0.25]:
             _run = functools.partial(run, size=size, agent=agent, task_per_agent=task_per_agent, seed=seed,
                                      scheduler=scheduler, phi=phi)
             tasks += [
