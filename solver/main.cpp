@@ -42,9 +42,10 @@ int main(int argc, const char *argv[]) {
 
     optionParser.overview = "Multi Agent Path Finding";
     optionParser.syntax = "./MAPF [OPTIONS]";
-    optionParser.example = "./MAPF";
+    optionParser.example = "./MAPF --flex -a 0 --phi 0 -b -s -m -db -re -d test-benchmark -t task/well-formed-21-35-10-2.task -o auto";
     optionParser.footer = "";
 
+    optionParser.add("", false, 0, 0, "Display this Message.","-h", "--help");
 
     optionParser.add("test-benchmark", false, 1, 0, "Data Path", "-d", "--data");
     optionParser.add("task/well-formed-21-35-50-2.task", false, 1, 0, "Task", "-t", "--task");
@@ -67,6 +68,13 @@ int main(int argc, const char *argv[]) {
     optionParser.add("", false, 0, 0, "Recalculate After Flex", "-re", "--recalculate");
     optionParser.add("", false, 0, 0, "Reserve all", "-ra", "--reserve-all");
     optionParser.parse(argc, argv);
+
+    if (optionParser.isSet("-h")) {
+        std::string usage;
+        optionParser.getUsage(usage,80,ez::ezOptionParser::ALIGN);
+        std::cout << usage;
+        return 1;
+    }
 
     std::string dataPath, taskFile, outputFile, scheduler;
     double phi;
