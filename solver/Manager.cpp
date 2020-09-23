@@ -704,7 +704,7 @@ void Manager::selectTask(Solver &solver, int x, double phi) {
             selectedTask = j;
         }
     }
-    std::cerr << " " << selectedTask << std::endl;
+//    std::cerr << " " << selectedTask << std::endl;
 
     bool taskSuccess = selectedTask < tasks.size();
     if (taskSuccess) {
@@ -736,7 +736,7 @@ void Manager::selectTask(Solver &solver, int x, double phi) {
             auto newSelectedAgent = computeAgentForTask(solver, selectedTask, tempAgents, phi, minBeta, minBetaTask,
                                                         count, true);
             if (selectedAgent != newSelectedAgent) {
-                std::cerr << "reselect agent: " << selectedAgent << " -> " << newSelectedAgent << std::endl;
+//                std::cerr << "reselect agent: " << selectedAgent << " -> " << newSelectedAgent << std::endl;
             }
             selectedAgent = newSelectedAgent;
         }
@@ -886,7 +886,7 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
         }
         computeAgentForTask(solver, j, sortAgents[j], phi, minBeta, minBetaTask, count);
     }
-    std::cerr << minBetaTask;
+//    std::cerr << minBetaTask;
 //    for (size_t i = 0; i < tasks.size(); i++) {
 //        std::cout << "task " << i << ": " << tasks[i]->maxBeta << " " << tasks[i]->maxBetaAgent << std::endl;
 //    }
@@ -895,3 +895,11 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
 
 }
 
+void Manager::printPaths() {
+    for (size_t i = 0; i < agents.size(); i++) {
+        std::cout << "agent " << i << " path" << std::endl;
+        for (auto &p:agents[i].path) {
+            std::cout << p.pos.first << " " << p.pos.second << " " << p.leaveTime <<std::endl;
+        }
+    }
+}

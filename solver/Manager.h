@@ -130,6 +130,8 @@ public:
     void leastFlexFirstAssign(Map *map, int algorithm, double phi);
 
     void earliestDeadlineFirstAssign(Map *map, int algorithm, double phi);
+
+    void printPaths();
 };
 
 

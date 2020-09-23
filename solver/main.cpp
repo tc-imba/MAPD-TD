@@ -42,18 +42,18 @@ int main(int argc, const char *argv[]) {
 
     optionParser.overview = "Multi Agent Path Finding";
     optionParser.syntax = "./MAPF [OPTIONS]";
-    optionParser.example = "./MAPF --flex -a 0 --phi 0 -b -s -m -db -re -d test-benchmark -t task/well-formed-21-35-10-2.task -o auto";
+    optionParser.example = "./MAPF --flex -a 0 --phi 0 -b -s -m -db -re -d test-benchmark -t task/well-formed-21-35-10-2.task -o auto\n";
     optionParser.footer = "";
 
     optionParser.add("", false, 0, 0, "Display this Message.","-h", "--help");
 
-    optionParser.add("test-benchmark", false, 1, 0, "Data Path", "-d", "--data");
-    optionParser.add("task/well-formed-21-35-50-2.task", false, 1, 0, "Task", "-t", "--task");
+    optionParser.add("demo-benchmark", false, 1, 0, "Data Path", "-d", "--data");
+    optionParser.add("task/well-formed-21-35-10-2.task", false, 1, 0, "Task", "-t", "--task");
     optionParser.add("", false, 1, 0, "Output File", "-o", "--output");
     optionParser.add("flex", false, 1, 0, "Scheduler (flex/edf)", "--scheduler");
 
     auto validPhi = new ez::ezOptionValidator("d", "ge", "0");
-    optionParser.add("1", false, 1, 0, "Phi", "--phi", validPhi);
+    optionParser.add("0", false, 1, 0, "Phi", "--phi", validPhi);
 
     auto validAlgorithm = new ez::ezOptionValidator("s1", "gele", "0,1");
     optionParser.add("0", false, 1, 0, "Algorithm", "-a", "--algorithm", validAlgorithm);
@@ -106,6 +106,7 @@ int main(int argc, const char *argv[]) {
         fout.open(outputFile);
         std::cout.rdbuf(fout.rdbuf());
     }
+    std::cerr << outputFile << std::endl;
 
     Manager manager(dataPath, maxStep, boundFlag, sortFlag, multiLabelFlag, true, deadlineBoundFlag, recalculateFlag, reserveAllFlag);
     auto map = manager.loadTaskFile(taskFile);
@@ -117,6 +118,8 @@ int main(int argc, const char *argv[]) {
     } else {
         assert(0);
     }
+
+    manager.printPaths();
 
     if (!outputFile.empty()) {
         std::cout.rdbuf(coutBuf);
