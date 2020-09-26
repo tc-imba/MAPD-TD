@@ -75,7 +75,7 @@ private:
 //    std::list<std::unique_ptr<Scenario> > tasks;
 //    std::vector<size_t> tasksMaxBetaAgent;
 
-    size_t maxStep;
+    size_t maxStep, windowSize;
     bool boundFlag;
     bool sortFlag;
     bool multiLabelFlag;
@@ -113,7 +113,7 @@ private:
     bool isPathConflict(Solver &solver, Agent &agent, const std::vector<PathNode> &vector);
 
 public:
-    explicit Manager(std::string dataPath, size_t maxStep = 10000,
+    explicit Manager(std::string dataPath, size_t maxStep = 10000, size_t windowSize = 0,
                      bool boundFlag = true, bool sortFlag = true,
                      bool multiLabelFlag = true, bool occupiedFlag = true,
                      bool deadlineBoundFlag = true, bool recalculateFlag = true,

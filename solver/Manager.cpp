@@ -11,10 +11,10 @@
 #include <algorithm>
 #include <chrono>
 
-Manager::Manager(std::string dataPath, size_t maxStep,
+Manager::Manager(std::string dataPath, size_t maxStep, size_t windowSize,
                  bool boundFlag, bool sortFlag, bool multiLabelFlag, bool occupiedFlag, bool deadlineBoundFlag,
                  bool recalculateFlag, bool reserveAllFlag)
-        : dataPath(std::move(dataPath)), maxStep(maxStep),
+        : dataPath(std::move(dataPath)), maxStep(maxStep), windowSize(windowSize),
           boundFlag(boundFlag), sortFlag(sortFlag),
           multiLabelFlag(multiLabelFlag), occupiedFlag(occupiedFlag),
           deadlineBoundFlag(deadlineBoundFlag), recalculateFlag(recalculateFlag),
@@ -114,6 +114,11 @@ Map *Manager::loadTaskFile(const std::string &filename) {
             tasks.emplace_back(std::move(task));
         }
     }
+
+    // sort task by deadline for consistency and windowed algorithm
+    std::sort(tasks.begin(), tasks.end(),
+              [](const auto &a, const auto &b) { return a->scenario.getOptimal() < b->scenario.getOptimal(); });
+
     return map;
 }
 
@@ -163,9 +168,6 @@ void Manager::earliestDeadlineFirstAssign(Map *map, int algorithm, double phi) {
 
     auto start = std::chrono::system_clock::now();
 
-
-    std::sort(tasks.begin(), tasks.end(),
-              [](const auto &a, const auto &b) { return a->scenario.getOptimal() < b->scenario.getOptimal(); });
 
     for (size_t j = 0; j < tasks.size(); j++) {
         double minBeta = -1;
@@ -698,7 +700,7 @@ void Manager::selectTask(Solver &solver, int x, double phi) {
     size_t selectedTask = std::numeric_limits<size_t>::max();
     for (size_t j = 0; j < tasks.size(); j++) {
         auto &task = tasks[j];
-        if (task->maxBetaAgent < agents.size() &&
+        if (task->released && task->maxBetaAgent < agents.size() &&
             (task->maxBeta < minFlex || (task->maxBeta == minFlex && j < selectedTask))) {
             minFlex = task->maxBeta;
             selectedTask = j;
@@ -876,15 +878,21 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
     }
 
     Count count;
+    size_t taskCalculated = 0;
     for (auto _p : sortTasks) {
         auto j = _p.first;
         auto &task = tasks[j];
-        // sort the agents
-        if (sortFlag) {
-            std::sort(sortAgents[j].begin(), sortAgents[j].end(),
-                      [](const auto &a, const auto &b) { return a.second > b.second; });
+        if (windowSize > 0 && taskCalculated >= windowSize) {
+            task->released = false;
+        } else {
+            // sort the agents
+            if (sortFlag) {
+                std::sort(sortAgents[j].begin(), sortAgents[j].end(),
+                          [](const auto &a, const auto &b) { return a.second > b.second; });
+            }
+            computeAgentForTask(solver, j, sortAgents[j], phi, minBeta, minBetaTask, count);
         }
-        computeAgentForTask(solver, j, sortAgents[j], phi, minBeta, minBetaTask, count);
+        ++taskCalculated;
     }
 //    std::cerr << minBetaTask;
 //    for (size_t i = 0; i < tasks.size(); i++) {

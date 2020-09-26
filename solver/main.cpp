@@ -45,9 +45,9 @@ int main(int argc, const char *argv[]) {
     optionParser.example = "./MAPF --flex -a 0 --phi 0 -b -s -m -db -re -d test-benchmark -t task/well-formed-21-35-10-2.task -o auto\n";
     optionParser.footer = "";
 
-    optionParser.add("", false, 0, 0, "Display this Message.","-h", "--help");
+    optionParser.add("", false, 0, 0, "Display this Message.", "-h", "--help");
 
-    optionParser.add("demo-benchmark", false, 1, 0, "Data Path", "-d", "--data");
+    optionParser.add("test-benchmark", false, 1, 0, "Data Path", "-d", "--data");
     optionParser.add("task/well-formed-21-35-10-2.task", false, 1, 0, "Task", "-t", "--task");
     optionParser.add("", false, 1, 0, "Output File", "-o", "--output");
     optionParser.add("flex", false, 1, 0, "Scheduler (flex/edf)", "--scheduler");
@@ -61,6 +61,9 @@ int main(int argc, const char *argv[]) {
     auto validMaxStep = new ez::ezOptionValidator("u4");
     optionParser.add("100000", false, 1, 0, "Max Step", "--max-step", validMaxStep);
 
+    auto validWindowSize = new ez::ezOptionValidator("u4", "ge", "0");
+    optionParser.add("0", false, 1, 0, "Window Size (0 means no limit)", "-w", "--window", validWindowSize);
+
     optionParser.add("", false, 0, 0, "Use Branch and Bound", "-b", "--bound");
     optionParser.add("", false, 0, 0, "Use Sort", "-s", "--sort");
     optionParser.add("", false, 0, 0, "Use Multi Label", "-m", "--mlabel");
@@ -71,7 +74,7 @@ int main(int argc, const char *argv[]) {
 
     if (optionParser.isSet("-h")) {
         std::string usage;
-        optionParser.getUsage(usage,80,ez::ezOptionParser::ALIGN);
+        optionParser.getUsage(usage, 80, ez::ezOptionParser::ALIGN);
         std::cout << usage;
         return 1;
     }
@@ -80,7 +83,7 @@ int main(int argc, const char *argv[]) {
     double phi;
     int algorithmId;
     bool boundFlag, sortFlag, multiLabelFlag, deadlineBoundFlag, recalculateFlag, reserveAllFlag;
-    unsigned long long maxStep;
+    unsigned long long maxStep, windowSize;
 
     optionParser.get("--data")->getString(dataPath);
     optionParser.get("--task")->getString(taskFile);
@@ -89,6 +92,7 @@ int main(int argc, const char *argv[]) {
     optionParser.get("--phi")->getDouble(phi);
     optionParser.get("--algorithm")->getInt(algorithmId);
     optionParser.get("--max-step")->getULongLong(maxStep);
+    optionParser.get("--window")->getULongLong(windowSize);
     boundFlag = optionParser.isSet("--bound");
     sortFlag = optionParser.isSet("--sort");
     multiLabelFlag = optionParser.isSet("--mlabel");
@@ -108,7 +112,11 @@ int main(int argc, const char *argv[]) {
     }
     std::cerr << outputFile << std::endl;
 
-    Manager manager(dataPath, maxStep, boundFlag, sortFlag, multiLabelFlag, true, deadlineBoundFlag, recalculateFlag, reserveAllFlag);
+    Manager manager(
+            dataPath, maxStep, windowSize,
+            boundFlag, sortFlag, multiLabelFlag, true,
+            deadlineBoundFlag, recalculateFlag, reserveAllFlag
+    );
     auto map = manager.loadTaskFile(taskFile);
 
     if (scheduler == "edf") {
