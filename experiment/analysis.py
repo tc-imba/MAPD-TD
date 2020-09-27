@@ -15,6 +15,7 @@ def parse(filename):
     seed = args[4]
     scheduler = args[5]
     phi = args[6].replace('n', '-')
+    window = args[7]
     bound = str("bound" in args)
     sort = str("sort" in args)
     mlabel = str("mlabel" in args)
@@ -31,7 +32,7 @@ def parse(filename):
             if "time: " in line:
                 time_ms = line[6:-3]
     # print(task_success, task_num, time_ms)
-    return [size, agent, agent_per_task, seed, phi, scheduler, bound, sort, mlabel, reserve,
+    return [size, agent, agent_per_task, seed, phi, scheduler, window, bound, sort, mlabel, reserve,
             str(task_num), str(task_success), str(time_ms)]
 
 
@@ -39,11 +40,13 @@ def plot(phi, data):
     filename = os.path.join(experiment_dir, name + '-' + phi.replace('-', 'n') + ".png")
     data.sort(key=lambda x: int(x[0]))
     task = list(map(lambda x: int(x[0]), data))
-    edf = list(map(lambda x: float(x[1]) / int(x[0]), data))
-    flex = list(map(lambda x: float(x[2]) / int(x[0]), data))
+    edf = list(map(lambda x: float(x[1]["edf-0"]) / int(x[0]), data))
+    flex = list(map(lambda x: float(x[1]["flex-0"]) / int(x[0]), data))
+    window = list(map(lambda x: float(x[1]["flex-20"]) / int(x[0]), data))
     plt.figure()
     plt.plot(task, edf, label="edf", marker="o", linestyle="")
     plt.plot(task, flex, label="flex", marker="x", linestyle="")
+    plt.plot(task, window, label="window", marker=".", linestyle="")
     plt.xlabel('tasks')
     plt.ylabel('success rate')
     plt.legend()
@@ -52,7 +55,7 @@ def plot(phi, data):
 
 
 def main():
-    header = ["size", "agent", "task_per_agent", "phi", "scheduler",
+    header = ["size", "agent", "task_per_agent", "phi", "scheduler", "window",
               "bound", "sort", "mlabel", "reserve", "task_num", "task_success", "time_ms"]
 
     data = {}
@@ -60,7 +63,7 @@ def main():
 
     for filename in sorted(os.listdir(result_dir)):
         row = parse(filename)
-        row_signature = ','.join(row[:3] + row[4:11])
+        row_signature = ','.join(row[:3] + row[4:12])
         row_data = row[-2:]
         if row_signature not in data:
             data[row_signature] = []
@@ -86,15 +89,25 @@ def main():
         row = _key.split(',')
         if row[-2] == 'True':
             continue
-        key = '-'.join(row[:4])
+        key = ','.join(row[:4])
         if key not in data_dict:
-            data_dict[key] = value[0]
-        else:
-            prev = data_dict[key]
-            if row[4] == 'flex':
-                result_dict[row[3]].append((row[-1], prev, value[0]))
-            else:
-                result_dict[row[3]].append((row[-1], value[0], prev))
+            data_dict[key] = []
+
+        data_dict[key].append((row[4] + '-' + row[5], value[0]))
+        # else:
+        #     prev = data_dict[key]
+        #     if row[4] == 'flex':
+        #         result_dict[row[3]].append((row[-1], prev, value[0]))
+        #     else:
+        #         result_dict[row[3]].append((row[-1], value[0], prev))
+
+    for _key, value in data_dict.items():
+        row = _key.split(',')
+        phi = row[-1]
+        tasks = int(row[1]) * int(row[2])
+        result_dict[phi].append((tasks, dict(value)))
+
+    print(result_dict)
 
     for i, (phi, data) in enumerate(result_dict.items()):
         plot(phi, data)

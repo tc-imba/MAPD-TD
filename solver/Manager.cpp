@@ -827,18 +827,26 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
     // if a task can be completed with flexibility larger than this, we can skip this task
     double minBeta = -1;
     size_t minBetaTask = std::numeric_limits<size_t>::max();
-    std::vector<std::pair<size_t, double> > sortTasks(tasks.size());
-    for (size_t j = 0; j < tasks.size(); j++) {
+    size_t tasksSize = tasks.size();
+    if (windowSize > 0 && tasksSize > windowSize) {
+        tasksSize = windowSize;
+    }
+    std::vector<std::pair<size_t, double> > sortTasks(tasksSize);
+    for (size_t j = 0; j < tasksSize; j++) {
         if (tasks[j]->maxBeta < 0) {
             sortTasks[j] = std::make_pair(j, std::numeric_limits<double>::max());
         } else {
             sortTasks[j] = std::make_pair(j, tasks[j]->maxBeta);
         }
     }
+    for (size_t j = tasksSize; j < tasks.size(); j++) {
+        tasks[j]->released = false;
+    }
     if (sortFlag) {
         std::sort(sortTasks.begin(), sortTasks.end(),
                   [](const auto &a, const auto &b) { return a.second < b.second; });
     }
+
 
     // a vector to sort the agents of each task by flexibility
     std::vector<std::vector<std::pair<size_t, double> > >
@@ -878,21 +886,21 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
     }
 
     Count count;
-    size_t taskCalculated = 0;
+//    size_t taskCalculated = 0;
     for (auto _p : sortTasks) {
         auto j = _p.first;
         auto &task = tasks[j];
-        if (windowSize > 0 && taskCalculated >= windowSize) {
-            task->released = false;
-        } else {
+//        if (windowSize > 0 && taskCalculated >= windowSize) {
+//            task->released = false;
+//        } else {
             // sort the agents
             if (sortFlag) {
                 std::sort(sortAgents[j].begin(), sortAgents[j].end(),
                           [](const auto &a, const auto &b) { return a.second > b.second; });
             }
             computeAgentForTask(solver, j, sortAgents[j], phi, minBeta, minBetaTask, count);
-        }
-        ++taskCalculated;
+//        }
+//        ++taskCalculated;
     }
 //    std::cerr << minBetaTask;
 //    for (size_t i = 0; i < tasks.size(); i++) {

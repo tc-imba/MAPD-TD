@@ -8,21 +8,41 @@ program = os.path.join(project_root, "cmake-build-release", "MAPF")
 data_root = os.path.join(project_root, "test-benchmark")
 result_dir = os.path.join(project_root, "result")
 os.makedirs(result_dir, exist_ok=True)
-workers = 20
+workers = 23
+
+TIMEOUT = 180
+
+MAP = "small"
+
+if MAP == "small":
+    MAP_SIZE = (21, 35)
+    AGENTS = [10, 20, 30, 40, 50]
+    EXPERIMENT_TIMES = 10
+else:
+    MAP_SIZE = (33, 46)
+    AGENTS = [60, 90, 120, 150, 180]
+    EXPERIMENT_TIMES = 5
+TASKS_PER_AGENT = [2, 5, 10]
+PHIS = [-0.25, -0.1, 0, 0.1, 0.25]
+
+EXPERIMENT_JOBS = EXPERIMENT_TIMES * len(AGENTS) * len(TASKS_PER_AGENT) * len(PHIS) * 6
+count = 0
 
 
-async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex",
+async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex", window_size=0,
               phi=0.2, bound=True, sort=True, mlabel=True, reserve=False):
     # os.chdir(project_root)
     base_filename = "%d-%d-%d-%d-%d" % (size[0], size[1], agent, task_per_agent, seed)
     task_filename = "task/well-formed-%s.task" % base_filename
-    output_filename = "%s-%s-%s" % (base_filename, scheduler, phi >= 0 and str(phi) or 'n' + str(-phi))
+    phi_output = phi >= 0 and str(phi) or 'n' + str(-phi)
+    output_filename = "%s-%s-%s-%s" % (base_filename, scheduler, phi_output, window_size)
     args = [
         program,
         "--data", data_root,
         "--task", task_filename,
         "--scheduler", scheduler,
         "--phi", str(phi),
+        "-w", str(window_size),
         "--recalculate",
     ]
     if bound:
@@ -40,7 +60,7 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex
     args += ["--output", os.path.join(result_dir, output_filename)]
     # print(args)
 
-    global workers
+    global workers, count
     while workers <= 0:
         await asyncio.sleep(1)
 
@@ -48,7 +68,7 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex
     p = None
     try:
         p = await asyncio.create_subprocess_exec(program, *args, stderr=subprocess.PIPE)
-        await asyncio.wait_for(p.communicate(), timeout=3000)
+        await asyncio.wait_for(p.communicate(), timeout=1800)
     except asyncio.TimeoutError:
         print('timeout!')
     except:
@@ -58,20 +78,17 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex
     except:
         pass
     workers += 1
-    print(output_filename)
+    count += 1
+    print('%s (%d/%d)' % (output_filename, count, EXPERIMENT_JOBS))
 
 
-
-async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex"):
-    # for phi in [-0.25, -0.1, 0, 0.1, 0.25]:
+async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", window_size=0):
     tasks = []
-    for seed in range(10):
-        for phi in [-0.1, 0.1, 0.25]:
+    for seed in range(EXPERIMENT_TIMES):
+        for phi in PHIS:
             _run = functools.partial(run, size=size, agent=agent, task_per_agent=task_per_agent, seed=seed,
-                                     scheduler=scheduler, phi=phi)
+                                     scheduler=scheduler, window_size=window_size, phi=phi)
             tasks += [
-                # _run(bound=False, sort=False, mlabel=True),
-                # _run(bound=True, sort=False, mlabel=True),
                 _run(bound=True, sort=True, mlabel=True, reserve=True),
                 _run(bound=True, sort=True, mlabel=True, reserve=False),
             ]
@@ -80,25 +97,19 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex"):
 
 async def run_scheduler(size=(21, 35), agent=10, task_per_agent=2):
     await asyncio.gather(
-        run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex"),
-        run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="edf"),
+        # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex"),
+        run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex", window_size=20),
+        # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="edf"),
     )
 
 
 async def run_agent(size=(21, 35), agent=10):
-    await asyncio.gather(
-        run_scheduler(size=size, agent=agent, task_per_agent=2),
-        run_scheduler(size=size, agent=agent, task_per_agent=5),
-        run_scheduler(size=size, agent=agent, task_per_agent=10),
-    )
+    tasks = [run_scheduler(size=size, agent=agent, task_per_agent=i) for i in TASKS_PER_AGENT]
+    await asyncio.gather(*tasks)
 
 
 async def main():
-    tasks = []
-    for agent in [10, 20, 30, 40, 50]:
-        tasks.append(run_agent(size=(21, 35), agent=agent))
-    # for agent in [60, 90, 120, 150, 180]:
-    #     tasks.append(run_agent(size=(33, 46), agent=agent))
+    tasks = [run_agent(size=MAP_SIZE, agent=agent) for agent in AGENTS]
     await asyncio.gather(*tasks)
 
 
