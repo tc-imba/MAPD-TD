@@ -12,7 +12,7 @@ workers = 23
 
 TIMEOUT = 180
 
-MAP = "small"
+MAP = "big"
 
 if MAP == "small":
     MAP_SIZE = (21, 35)
@@ -97,9 +97,9 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
 
 async def run_scheduler(size=(21, 35), agent=10, task_per_agent=2):
     await asyncio.gather(
-        # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex"),
+        run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex"),
         run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex", window_size=20),
-        # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="edf"),
+        run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="edf"),
     )
 
 
