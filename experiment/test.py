@@ -84,7 +84,7 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex
 
 async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", window_size=0):
     tasks = []
-    for seed in range(EXPERIMENT_TIMES):
+    for seed in range(EXPERIMENT_TIMES, EXPERIMENT_TIMES * 2):
         for phi in PHIS:
             _run = functools.partial(run, size=size, agent=agent, task_per_agent=task_per_agent, seed=seed,
                                      scheduler=scheduler, window_size=window_size, phi=phi)
