@@ -12,7 +12,7 @@ workers = 23
 
 TIMEOUT = 180
 
-MAP = "big"
+MAP = "small"
 
 if MAP == "small":
     MAP_SIZE = (21, 35)
@@ -68,7 +68,7 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex
     p = None
     try:
         p = await asyncio.create_subprocess_exec(program, *args, stderr=subprocess.PIPE)
-        await asyncio.wait_for(p.communicate(), timeout=1800)
+        await asyncio.wait_for(p.communicate(), timeout=TIMEOUT)
     except asyncio.TimeoutError:
         print('timeout!')
     except:
@@ -84,13 +84,15 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex
 
 async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", window_size=0):
     tasks = []
-    for seed in range(EXPERIMENT_TIMES, EXPERIMENT_TIMES * 2):
+    for seed in range(EXPERIMENT_TIMES):
         for phi in PHIS:
             _run = functools.partial(run, size=size, agent=agent, task_per_agent=task_per_agent, seed=seed,
                                      scheduler=scheduler, window_size=window_size, phi=phi)
             tasks += [
-                _run(bound=True, sort=True, mlabel=True, reserve=True),
-                _run(bound=True, sort=True, mlabel=True, reserve=False),
+                # _run(bound=True, sort=True, mlabel=True, reserve=True),
+                # _run(bound=True, sort=True, mlabel=True, reserve=False),
+                _run(bound=False, sort=False, mlabel=True, reserve=False),
+                _run(bound=True, sort=False, mlabel=True, reserve=False),
             ]
     await asyncio.gather(*tasks)
 
@@ -98,8 +100,8 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
 async def run_scheduler(size=(21, 35), agent=10, task_per_agent=2):
     await asyncio.gather(
         run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex"),
-        run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex", window_size=20),
-        run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="edf"),
+        # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex", window_size=20),
+        # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="edf"),
     )
 
 

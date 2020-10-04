@@ -84,6 +84,8 @@ def main():
         for key, value in data.items():
             f.write("%s,%f,%f\n" % (key, value[0], value[1]))
 
+    exit(0)
+
     data_dict = {}
     for _key, value in data.items():
         row = _key.split(',')
