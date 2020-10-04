@@ -25,6 +25,15 @@ def parse_methods(df: pd.DataFrame):
     return edf_df, flex_df, window_df
 
 
+def parse_branch_and_bound(df: pd.DataFrame):
+    sort_df = df[(df['bound'] == True) & (df['sort'] == True)].set_index(['agent', 'task_per_agent'])
+    bound_df = df[(df['bound'] == True) & (df['sort'] == False)].set_index(['agent', 'task_per_agent'])
+    no_df = df[(df['bound'] == False) & (df['sort'] == False)].set_index(['agent', 'task_per_agent'])
+    new_bound_df = bound_df.join(sort_df, on=['agent', 'task_per_agent'], lsuffix='_bound', rsuffix='_sort')
+    new_no_df = no_df.join(sort_df, on=['agent', 'task_per_agent'], lsuffix='_no', rsuffix='_sort')
+    return sort_df, new_bound_df, new_no_df
+
+
 def parse_dummy_path(df: pd.DataFrame):
     reserve_dynamic_df = df[df['reserve'] == False].set_index(['agent', 'task_per_agent'])
     reserve_all_df = df[df['reserve'] == True].set_index(['agent', 'task_per_agent'])
@@ -81,6 +90,34 @@ def plot_tasks_vs_success(df, size, phi):
     plt.close()
 
 
+def plot_branch_and_bound(df, size, phi):
+    cond = (df['size'] == size) & (df['phi'] == phi) & (df['time_ms'] >= 0) & \
+           (df['mlabel'] == True) & (df['reserve'] == False) & \
+           (df['scheduler'] == 'flex') & (df['window'] == 0)
+    new_df = df[cond]
+    map_size = parse_map_size(new_df)
+    phi_str = str(phi)
+    filename = 'BB-%s-PHI-%s.png' % (map_size, phi_str.replace('-', 'n'))
+    title = 'Branch and Bound: %s Map, Phi=%s' % (map_size, phi_str)
+    print(filename, title)
+
+    sort_df, bound_df, no_df = parse_branch_and_bound(new_df)
+    plt.figure()
+
+    plt.plot(sort_df['task_num'], sort_df['task_num'] * 0 + 1, label="bound and sort (baseline) ", linestyle="-")
+    plt.plot(bound_df['task_num_sort'], bound_df['time_ms_bound'] / bound_df['time_ms_sort'], label="only bound", marker="o", linestyle="")
+    plt.plot(no_df['task_num_sort'], no_df['time_ms_no'] / no_df['time_ms_sort'], label="no bound", marker="x", linestyle="")
+
+    plt.yscale('log')
+    plt.xlabel('tasks number')
+    plt.ylabel('running time multiplier')
+    plt.legend()
+    plt.title(title)
+    plt.savefig(os.path.join(plots_dir, filename))
+    plt.close()
+
+
+
 def plot_dummy_path(df, size, phi):
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['time_ms'] >= 0) & \
            (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & \
@@ -95,8 +132,8 @@ def plot_dummy_path(df, size, phi):
 
     new_df = parse_dummy_path(new_df)
     plt.figure()
-    plt.plot(new_df['task_num_all'], new_df['time_ms_dynamic'] / new_df['time_ms_all'], label="dynamic reserve", marker="o", linestyle="")
     plt.plot(new_df['task_num_all'], new_df['task_num_all'] * 0 + 1, label="reserve all (baseline) ", linestyle="-")
+    plt.plot(new_df['task_num_all'], new_df['time_ms_dynamic'] / new_df['time_ms_all'], label="dynamic reserve", marker="o", linestyle="")
     plt.xlabel('tasks number')
     plt.ylabel('running time multiplier')
     plt.legend()
@@ -121,10 +158,16 @@ def main():
     #     size, phi = index
     #     plot_tasks_vs_success(all_df, size, phi)
 
-    pairs = all_df.groupby(['size', 'phi']).first()
+    # pairs = all_df.groupby(['size', 'phi']).first()
+    # for index, row in pairs.iterrows():
+    #     size, phi = index
+    #     plot_dummy_path(all_df, size, phi)
+
+    pairs = small_df.groupby(['size', 'phi']).first()
     for index, row in pairs.iterrows():
         size, phi = index
-        plot_dummy_path(all_df, size, phi)
+        plot_branch_and_bound(small_df, size, phi)
+
 
 
     # print(pair)
