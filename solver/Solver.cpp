@@ -309,9 +309,9 @@ void Solver::replaceNode(VirtualNode *vNode, std::pair<size_t, size_t> pos,
                     ++it2;
                 }
             }
-            if (deleteCount > 1) {
-                std::cerr << "delete " << deleteCount << std::endl;
-            }
+//            if (deleteCount > 1) {
+//                std::cerr << "delete " << deleteCount << std::endl;
+//            }
             newNode->estimateTime = newNode->leaveTime + heuristicTime;
             addVirtualNodeToList(open, newNode, true);
         } else {

@@ -142,6 +142,9 @@ void Manager::leastFlexFirstAssign(Map *map, int algorithm, double phi) {
 //            }
 //        }
         selectTask(solver, 1, phi);
+        auto end = std::chrono::system_clock::now();
+        auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        std::cout << "time: " << time << "ms" << std::endl;
     }
 
     applyReservedPath();
@@ -269,7 +272,8 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
             upperBound = std::min(upperBound, (size_t) deadline + 1);
         }
 
-        if (skipFlag) {
+        size_t agentMinTime = Map::getDistance(agent.currentPos, task->scenario.getStart()) + task->scenario.getDistance();
+        if (skipFlag || agent.lastTimeStamp + agentMinTime > upperBound) {
             auto beta = p.second;
             if (beta < 0) beta = -1;
             else if (beta < minBeta) beta = minBeta;
