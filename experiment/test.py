@@ -8,11 +8,11 @@ program = os.path.join(project_root, "cmake-build-release", "MAPF")
 data_root = os.path.join(project_root, "test-benchmark")
 result_dir = os.path.join(project_root, "result")
 os.makedirs(result_dir, exist_ok=True)
-workers = 23
+workers = 20
 
-TIMEOUT = 180
+TIMEOUT = 36000
 
-MAP = "small"
+MAP = "large"
 
 if MAP == "small":
     MAP_SIZE = (21, 35)
@@ -20,12 +20,15 @@ if MAP == "small":
     EXPERIMENT_TIMES = 10
 else:
     MAP_SIZE = (33, 46)
-    AGENTS = [60, 90, 120, 150, 180]
-    EXPERIMENT_TIMES = 5
-TASKS_PER_AGENT = [2, 5, 10]
+    # AGENTS = [60, 90, 120, 150, 180]
+    AGENTS = [120, 150, 180]
+    EXPERIMENT_TIMES = 10
+# TASKS_PER_AGENT = [2, 5, 10]
+TASKS_PER_AGENT = [10]
 PHIS = [-0.25, -0.1, 0, 0.1, 0.25]
+PHIS_180 = [-0.25, -0.1, 0.25]
 
-EXPERIMENT_JOBS = EXPERIMENT_TIMES * len(AGENTS) * len(TASKS_PER_AGENT) * len(PHIS) * 2
+EXPERIMENT_JOBS = EXPERIMENT_TIMES * len(AGENTS) * len(TASKS_PER_AGENT) * len(PHIS) * 1 - 20
 count = 0
 
 
@@ -85,14 +88,18 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex
 async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", window_size=0):
     tasks = []
     for seed in range(EXPERIMENT_TIMES):
-        for phi in PHIS:
+        if agent == 180:
+            _PHIS = PHIS_180
+        else:
+            _PHIS = PHIS
+        for phi in _PHIS:
             _run = functools.partial(run, size=size, agent=agent, task_per_agent=task_per_agent, seed=seed,
                                      scheduler=scheduler, window_size=window_size, phi=phi)
             tasks += [
                 # _run(bound=True, sort=True, mlabel=True, reserve=True),
-                # _run(bound=True, sort=True, mlabel=True, reserve=False),
-                _run(bound=False, sort=False, mlabel=True, reserve=False),
-                _run(bound=True, sort=False, mlabel=True, reserve=False),
+                _run(bound=True, sort=True, mlabel=True, reserve=False),
+                # _run(bound=False, sort=False, mlabel=True, reserve=False),
+                # _run(bound=True, sort=False, mlabel=True, reserve=False),
             ]
     await asyncio.gather(*tasks)
 

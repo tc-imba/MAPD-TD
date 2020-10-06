@@ -148,20 +148,20 @@ def main():
     large_df = pd.read_csv(large_filename)
     all_df = pd.concat([small_df, large_df])
 
-    # pairs = all_df.groupby(['agent', 'task_per_agent']).first()
-    # for index, row in pairs.iterrows():
-    #     agent, task_per_agent = index
-    #     plot_phi_vs_success(all_df, agent, task_per_agent)
+    pairs = all_df.groupby(['agent', 'task_per_agent']).first()
+    for index, row in pairs.iterrows():
+        agent, task_per_agent = index
+        plot_phi_vs_success(all_df, agent, task_per_agent)
 
-    # pairs = all_df.groupby(['size', 'phi']).first()
-    # for index, row in pairs.iterrows():
-    #     size, phi = index
-    #     plot_tasks_vs_success(all_df, size, phi)
+    pairs = all_df.groupby(['size', 'phi']).first()
+    for index, row in pairs.iterrows():
+        size, phi = index
+        plot_tasks_vs_success(all_df, size, phi)
 
-    # pairs = all_df.groupby(['size', 'phi']).first()
-    # for index, row in pairs.iterrows():
-    #     size, phi = index
-    #     plot_dummy_path(all_df, size, phi)
+    pairs = all_df.groupby(['size', 'phi']).first()
+    for index, row in pairs.iterrows():
+        size, phi = index
+        plot_dummy_path(all_df, size, phi)
 
     pairs = small_df.groupby(['size', 'phi']).first()
     for index, row in pairs.iterrows():

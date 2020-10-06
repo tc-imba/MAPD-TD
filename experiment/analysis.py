@@ -1,7 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 
-name = "result"
+name = "result-big"
 project_root = os.path.dirname(os.path.dirname(__file__))
 experiment_dir = os.path.dirname(__file__)
 result_dir = os.path.join(project_root, name)
@@ -63,6 +63,8 @@ def main():
 
     for filename in sorted(os.listdir(result_dir)):
         row = parse(filename)
+        if float(row[-1]) < 0:
+            continue
         row_signature = ','.join(row[:3] + row[4:12])
         row_data = row[-2:]
         if row_signature not in data:

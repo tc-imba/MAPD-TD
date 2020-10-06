@@ -136,11 +136,6 @@ void Manager::leastFlexFirstAssign(Map *map, int algorithm, double phi) {
 
     while (!tasks.empty()) {
         computeFlex(solver, 1, phi);
-//        for (int i = 0; i < agents.size(); i++) {
-//            for (int j = 0; j < tasks.size(); j++) {
-//                std::cout << i << " " << j << " " << agents[i].flexibility[j].beta << std::endl;
-//            }
-//        }
         selectTask(solver, 1, phi);
         auto end = std::chrono::system_clock::now();
         auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
