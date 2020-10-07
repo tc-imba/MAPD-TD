@@ -65,6 +65,34 @@ def plot_phi_vs_success(df, agent, task_per_agent):
     plt.close()
 
 
+# for each (agent, task_per_agent), draw phi as x, success rate as y
+def plot_phi(df):
+    cond = (df['time_ms'] >= 0) & \
+           (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['reserve'] == False)
+    new_df = df[cond]
+    map_size = parse_map_size(new_df)
+    filename = 'SR-%s.png' % map_size
+    title = 'Success Rate: %s Map' % map_size
+    print(filename, title)
+
+    edf_df, flex_df, window_df = parse_methods(new_df)
+    edf_df = edf_df.groupby(['phi'], as_index=False).mean()
+    flex_df = flex_df.groupby(['phi'], as_index=False).mean()
+    window_df = window_df.groupby(['phi'], as_index=False).mean()
+
+    plt.figure()
+    plt.plot(edf_df['phi'], edf_df['task_success'] / edf_df['task_num'], label="edf", marker="o", linestyle="")
+    plt.plot(flex_df['phi'], flex_df['task_success'] / flex_df['task_num'], label="flex", marker="x", linestyle="")
+    plt.plot(window_df['phi'], window_df['task_success'] / window_df['task_num'], label="window", marker=".",
+             linestyle="")
+    plt.xlabel('phi')
+    plt.ylabel('success rate')
+    plt.legend()
+    plt.title(title)
+    plt.savefig(os.path.join(plots_dir, filename))
+    plt.close()
+
+
 # for each (map, phi), draw task_num as x, success rate as y
 def plot_tasks_vs_success(df, size, phi):
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['time_ms'] >= 0) & \
@@ -148,25 +176,28 @@ def main():
     large_df = pd.read_csv(large_filename)
     all_df = pd.concat([small_df, large_df])
 
-    pairs = all_df.groupby(['agent', 'task_per_agent']).first()
-    for index, row in pairs.iterrows():
-        agent, task_per_agent = index
-        plot_phi_vs_success(all_df, agent, task_per_agent)
+    plot_phi(small_df)
+    plot_phi(large_df)
 
-    pairs = all_df.groupby(['size', 'phi']).first()
-    for index, row in pairs.iterrows():
-        size, phi = index
-        plot_tasks_vs_success(all_df, size, phi)
-
-    pairs = all_df.groupby(['size', 'phi']).first()
-    for index, row in pairs.iterrows():
-        size, phi = index
-        plot_dummy_path(all_df, size, phi)
-
-    pairs = small_df.groupby(['size', 'phi']).first()
-    for index, row in pairs.iterrows():
-        size, phi = index
-        plot_branch_and_bound(small_df, size, phi)
+    # pairs = all_df.groupby(['agent', 'task_per_agent']).first()
+    # for index, row in pairs.iterrows():
+    #     agent, task_per_agent = index
+    #     plot_phi_vs_success(all_df, agent, task_per_agent)
+    #
+    # pairs = all_df.groupby(['size', 'phi']).first()
+    # for index, row in pairs.iterrows():
+    #     size, phi = index
+    #     plot_tasks_vs_success(all_df, size, phi)
+    #
+    # pairs = all_df.groupby(['size', 'phi']).first()
+    # for index, row in pairs.iterrows():
+    #     size, phi = index
+    #     plot_dummy_path(all_df, size, phi)
+    #
+    # pairs = small_df.groupby(['size', 'phi']).first()
+    # for index, row in pairs.iterrows():
+    #     size, phi = index
+    #     plot_branch_and_bound(small_df, size, phi)
 
 
 
