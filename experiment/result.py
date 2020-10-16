@@ -81,11 +81,14 @@ def plot_phi(df):
     edf_df = edf_df.groupby(['phi'], as_index=False).mean()
     flex_df = flex_df.groupby(['phi'], as_index=False).mean()
     window_df = window_df.groupby(['phi'], as_index=False).mean()
+    print("edf", edf_df)
+    print("flex", flex_df)
+    print("window", window_df)
 
     plt.figure()
-    plt.plot(edf_df['phi'], edf_df['task_success'] / edf_df['task_num'], label="edf", marker="o", linestyle="")
-    plt.plot(flex_df['phi'], flex_df['task_success'] / flex_df['task_num'], label="flex", marker="x", linestyle="")
-    plt.plot(window_df['phi'], window_df['task_success'] / window_df['task_num'], label="window", marker=".",
+    plt.plot(edf_df['phi'], edf_df['success_rate'], label="edf", marker="o", linestyle="")
+    plt.plot(flex_df['phi'], flex_df['success_rate'], label="flex", marker="x", linestyle="")
+    plt.plot(window_df['phi'], window_df['success_rate'], label="window", marker=".",
              linestyle="")
     plt.xlabel('phi')
     plt.ylabel('success rate')
@@ -97,6 +100,7 @@ def plot_phi(df):
 
 # for each (map, phi, k), draw task_num as x, success rate as y
 def plot_tasks_vs_success(df, size, phi, k):
+    df['ratio'] = df['task_success'] / df['task_num']
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['task_per_agent'] == k) & (df['time_ms'] >= 0) & \
            (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['reserve'] == False)
     new_df = df[cond]
@@ -119,7 +123,7 @@ def plot_tasks_vs_success(df, size, phi, k):
     plt.savefig(os.path.join(plots_dir, filename))
     plt.close()
 
-    print(new_df[['agent', 'task_per_agent', 'task_num', 'task_success', 'time_ms']])
+    print(new_df[['agent', 'task_per_agent', 'scheduler', 'window', 'task_num', 'task_success', 'ratio', 'time_ms']])
 
 def plot_branch_and_bound(df, size, phi):
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['time_ms'] >= 0) & \
@@ -191,7 +195,9 @@ def main():
     small_filename = os.path.join(experiment_dir, "small", "result.csv")
     large_filename = os.path.join(experiment_dir, "big", "result.csv")
     small_df = pd.read_csv(small_filename)
+    small_df['success_rate'] = small_df['task_success'] / small_df['task_num']
     large_df = pd.read_csv(large_filename)
+    large_df['success_rate'] = large_df['task_success'] / large_df['task_num']
     all_df = pd.concat([small_df, large_df])
 
     # plot_phi(small_df)
