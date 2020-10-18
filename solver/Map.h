@@ -53,12 +53,15 @@ private:
     size_t height = 0, width = 0;
     std::string type;
     std::vector<std::vector<char> > map;
+    std::vector<std::vector<size_t> > distances;
 
     std::unordered_map<OccupiedKey, std::unique_ptr<OccupiedValue>, OccupiedKeyHash, OccupiedKeyEqual> occupiedMap;
 
 
     template<typename T>
     static void parseHeader(const std::string &line, const std::string &key, T &value);
+
+    void calculateDistances();
 
 public:
     explicit Map(const std::string &filename);
@@ -100,6 +103,8 @@ public:
     std::string printOccupiedMap() const;
 
     static size_t getDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
+
+    size_t getGraphDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
 };
 
 

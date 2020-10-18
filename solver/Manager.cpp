@@ -12,13 +12,14 @@
 #include <chrono>
 
 Manager::Manager(std::string dataPath, size_t maxStep, size_t windowSize,
-                 bool boundFlag, bool sortFlag, bool multiLabelFlag, bool occupiedFlag, bool deadlineBoundFlag,
+                 bool boundFlag, bool sortFlag, bool multiLabelFlag, bool occupiedFlag,
+                 bool deadlineBoundFlag, bool taskBoundFlag,
                  bool recalculateFlag, bool reserveAllFlag)
         : dataPath(std::move(dataPath)), maxStep(maxStep), windowSize(windowSize),
           boundFlag(boundFlag), sortFlag(sortFlag),
           multiLabelFlag(multiLabelFlag), occupiedFlag(occupiedFlag),
-          deadlineBoundFlag(deadlineBoundFlag), recalculateFlag(recalculateFlag),
-          reserveAllFlag(reserveAllFlag) {}
+          deadlineBoundFlag(deadlineBoundFlag), taskBoundFlag(taskBoundFlag),
+          recalculateFlag(recalculateFlag), reserveAllFlag(reserveAllFlag) {}
 
 Map *Manager::loadMapFile(const std::string &mapName) {
     auto filePath = dataPath + "/map/" + mapName;
@@ -148,7 +149,7 @@ void Manager::leastFlexFirstAssign(Map *map, int algorithm, double phi) {
     auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
     std::cout << "time: " << time << "ms" << std::endl;
-
+    std::cerr << "time: " << time << "ms" << std::endl;
 }
 
 void Manager::earliestDeadlineFirstAssign(Map *map, int algorithm, double phi) {
@@ -197,6 +198,7 @@ void Manager::earliestDeadlineFirstAssign(Map *map, int algorithm, double phi) {
     auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
     std::cout << "time: " << time << "ms" << std::endl;
+    std::cerr << "time: " << time << "ms" << std::endl;
 }
 
 void Manager::applyReservedPath() {
@@ -228,6 +230,19 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
     double taskMaxBeta = -1;
     size_t taskMinAgentTime = std::numeric_limits<size_t>::max();
     size_t taskSelectedAgent = std::numeric_limits<size_t>::max();
+    task->released = true;
+
+    if (taskBoundFlag && minBeta >= 0 && agentMaxTimestamp > 0) {
+        auto &agent = agents[agentMaxTimestampAgent];
+        auto pos = agent.currentPos;
+        size_t agentMinTime = map->getGraphDistance(agent.currentPos, task->scenario.getStart()) +
+                              map->getGraphDistance(task->scenario.getStart(), task->scenario.getEnd());
+        if ((double) agentMaxTimestamp + agentMinTime < deadline - minBeta) {
+            std::cerr << "skip " << j << std::endl;
+            skipFlag = true;
+            task->released = false;
+        }
+    }
 
 
     if (recalculate) {
@@ -246,7 +261,6 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
         }
     }
 
-    task->released = true;
 
     for (auto &p : sortAgent) {
         auto i = p.first;
@@ -267,7 +281,8 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
             upperBound = std::min(upperBound, (size_t) deadline + 1);
         }
 
-        size_t agentMinTime = Map::getDistance(agent.currentPos, task->scenario.getStart()) + task->scenario.getDistance();
+        size_t agentMinTime = map->getGraphDistance(agent.currentPos, task->scenario.getStart()) +
+                              map->getGraphDistance(task->scenario.getStart(), task->scenario.getEnd());
         if (skipFlag || agent.lastTimeStamp + agentMinTime > upperBound) {
             auto beta = p.second;
             if (beta < 0) beta = -1;
@@ -319,7 +334,7 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
 
         size_t agentStartTime = 0, agentEndTime = 0;
         size_t distance = Map::getDistance(agent.currentPos, task->scenario.getStart());
-        if (deadlineBoundFlag && agentMaxTimestamp + distance < task->scenario.getStartTime()) {
+        if (deadlineBoundFlag && agentMaxReserveTimestamp + distance < task->scenario.getStartTime()) {
             task->released = false;
         } else if (multiLabelFlag) {
             std::vector<std::pair<size_t, size_t> > positions = {
@@ -550,13 +565,15 @@ bool Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector
         if (successAgents == reservingAgentSet.size()) {
             // reserve agent successfully
             for (auto &p : savedAgents) {
-                agentMaxTimestamp = std::max(agentMaxTimestamp, agents[p.first].reservedPath.back().leaveTime);
+                agentMaxReserveTimestamp = std::max(agentMaxReserveTimestamp,
+                                                    agents[p.first].reservedPath.back().leaveTime);
             }
             agent.path.insert(agent.path.end(), vector.begin(), vector.end());
             map->addWaitingAgent(agent.currentPos, agent.lastTimeStamp, i);
 //            std::cerr << "success: " << i << " reserved: ";
             for (auto &p : savedAgents) {
-                agentMaxTimestamp = std::max(agentMaxTimestamp, agents[p.first].reservedPath.back().leaveTime);
+                agentMaxReserveTimestamp = std::max(agentMaxReserveTimestamp,
+                                                    agents[p.first].reservedPath.back().leaveTime);
 //                std::cerr << p.first << " ";
             }
 //            std::cerr << std::endl;
@@ -596,7 +613,11 @@ bool Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector
             result = false;
         }
     }
-    agentMaxTimestamp = std::max(agentMaxTimestamp, agent.lastTimeStamp);
+    if (agentMaxTimestamp < agent.lastTimeStamp) {
+        agentMaxTimestamp = agent.lastTimeStamp;
+        agentMaxTimestampAgent = i;
+    }
+    agentMaxReserveTimestamp = std::max(agentMaxReserveTimestamp, agent.lastTimeStamp);
     return result;
 /*
     if (occupiedFlag && occupiedAgent < agents.size() && occupiedAgent != i) {
@@ -892,12 +913,12 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
 //        if (windowSize > 0 && taskCalculated >= windowSize) {
 //            task->released = false;
 //        } else {
-            // sort the agents
-            if (sortFlag) {
-                std::sort(sortAgents[j].begin(), sortAgents[j].end(),
-                          [](const auto &a, const auto &b) { return a.second > b.second; });
-            }
-            computeAgentForTask(solver, j, sortAgents[j], phi, minBeta, minBetaTask, count);
+        // sort the agents
+        if (sortFlag) {
+            std::sort(sortAgents[j].begin(), sortAgents[j].end(),
+                      [](const auto &a, const auto &b) { return a.second > b.second; });
+        }
+        computeAgentForTask(solver, j, sortAgents[j], phi, minBeta, minBetaTask, count);
 //        }
 //        ++taskCalculated;
     }
@@ -914,7 +935,7 @@ void Manager::printPaths() {
     for (size_t i = 0; i < agents.size(); i++) {
         std::cout << "agent " << i << " path" << std::endl;
         for (auto &p:agents[i].path) {
-            std::cout << p.pos.first << " " << p.pos.second << " " << p.leaveTime <<std::endl;
+            std::cout << p.pos.first << " " << p.pos.second << " " << p.leaveTime << std::endl;
         }
     }
 }

@@ -11,7 +11,8 @@
 #include "Solver.h"
 
 std::string generateOutputFileName(const std::string &scheduler, int algorithmId,
-                                   bool boundFlag, bool sortFlag, bool multiLabelFlag, bool deadlineBoundFlag,
+                                   bool boundFlag, bool sortFlag, bool multiLabelFlag,
+                                   bool deadlineBoundFlag, bool taskBoundFlag,
                                    bool recalculateFlag, bool reserveAllFlag) {
     std::ostringstream oss;
     oss << scheduler << "-algo-" << algorithmId;
@@ -26,6 +27,9 @@ std::string generateOutputFileName(const std::string &scheduler, int algorithmId
     }
     if (deadlineBoundFlag) {
         oss << "-db";
+    }
+    if (taskBoundFlag) {
+        oss << "-tb";
     }
     if (recalculateFlag) {
         oss << "-recalc";
@@ -68,6 +72,7 @@ int main(int argc, const char *argv[]) {
     optionParser.add("", false, 0, 0, "Use Sort", "-s", "--sort");
     optionParser.add("", false, 0, 0, "Use Multi Label", "-m", "--mlabel");
     optionParser.add("", false, 0, 0, "Use Deadline Bound", "-db", "--deadline-bound");
+    optionParser.add("", false, 0, 0, "Use Task Bound", "-tb", "--task-bound");
     optionParser.add("", false, 0, 0, "Recalculate After Flex", "-re", "--recalculate");
     optionParser.add("", false, 0, 0, "Reserve all", "-ra", "--reserve-all");
     optionParser.parse(argc, argv);
@@ -82,7 +87,7 @@ int main(int argc, const char *argv[]) {
     std::string dataPath, taskFile, outputFile, scheduler;
     double phi;
     int algorithmId;
-    bool boundFlag, sortFlag, multiLabelFlag, deadlineBoundFlag, recalculateFlag, reserveAllFlag;
+    bool boundFlag, sortFlag, multiLabelFlag, deadlineBoundFlag, taskBoundFlag, recalculateFlag, reserveAllFlag;
     unsigned long long maxStep, windowSize;
 
     optionParser.get("--data")->getString(dataPath);
@@ -97,6 +102,7 @@ int main(int argc, const char *argv[]) {
     sortFlag = optionParser.isSet("--sort");
     multiLabelFlag = optionParser.isSet("--mlabel");
     deadlineBoundFlag = optionParser.isSet("--deadline-bound");
+    taskBoundFlag = optionParser.isSet("--task-bound");
     recalculateFlag = optionParser.isSet("--recalculate");
     reserveAllFlag = optionParser.isSet("--reserve-all");
 
@@ -105,7 +111,7 @@ int main(int argc, const char *argv[]) {
     if (!outputFile.empty()) {
         if (outputFile == "auto") {
             outputFile = generateOutputFileName(scheduler, algorithmId, boundFlag, sortFlag, multiLabelFlag,
-                                                deadlineBoundFlag, recalculateFlag, reserveAllFlag);
+                                                deadlineBoundFlag, taskBoundFlag, recalculateFlag, reserveAllFlag);
         }
         fout.open(outputFile);
         std::cout.rdbuf(fout.rdbuf());
@@ -115,7 +121,7 @@ int main(int argc, const char *argv[]) {
     Manager manager(
             dataPath, maxStep, windowSize,
             boundFlag, sortFlag, multiLabelFlag, true,
-            deadlineBoundFlag, recalculateFlag, reserveAllFlag
+            deadlineBoundFlag, taskBoundFlag, recalculateFlag, reserveAllFlag
     );
     auto map = manager.loadTaskFile(taskFile);
 

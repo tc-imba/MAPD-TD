@@ -35,6 +35,7 @@ string generateMap(const string &dataPath, size_t deliveryWidth, size_t delivery
         }
         fout << endl;
     }
+    fout.close();
 
     return mapName;
 }

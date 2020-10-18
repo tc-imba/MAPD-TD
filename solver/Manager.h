@@ -70,7 +70,9 @@ private:
 
     std::vector<Agent> agents;
     std::vector<std::unique_ptr<Task> > tasks;
+    size_t agentMaxReserveTimestamp = 0;
     size_t agentMaxTimestamp = 0;
+    size_t agentMaxTimestampAgent = 0;
 
 //    std::list<std::unique_ptr<Scenario> > tasks;
 //    std::vector<size_t> tasksMaxBetaAgent;
@@ -81,6 +83,7 @@ private:
     bool multiLabelFlag;
     bool occupiedFlag;
     bool deadlineBoundFlag;
+    bool taskBoundFlag;
     bool recalculateFlag;
     bool reserveAllFlag;
 
@@ -116,8 +119,8 @@ public:
     explicit Manager(std::string dataPath, size_t maxStep = 10000, size_t windowSize = 0,
                      bool boundFlag = true, bool sortFlag = true,
                      bool multiLabelFlag = true, bool occupiedFlag = true,
-                     bool deadlineBoundFlag = true, bool recalculateFlag = true,
-                     bool reserveAllFlag = true);
+                     bool deadlineBoundFlag = true, bool taskBoundFlag = true,
+                     bool recalculateFlag = true, bool reserveAllFlag = true);
 
     Map *getMap(const std::string &mapName);
 

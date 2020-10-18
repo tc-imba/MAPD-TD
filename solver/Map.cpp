@@ -27,6 +27,35 @@ void Map::parseHeader(const std::string &line, const std::string &key, T &value)
     }
 }
 
+void Map::calculateDistances() {
+    size_t size = width * height;
+    distances.resize(size, std::vector<size_t>(size, std::numeric_limits<size_t>::max() / 2));
+    for (size_t i = 0; i < height; i++) {
+        for (size_t j = 0; j < width; j++) {
+            size_t a = i * width + j;
+            distances[a][a] = 0;
+            if (map[i][j] == '.') {
+                for (auto direction : Map::directions) {
+                    auto p = getPosByDirection({i, j}, direction);
+                    if (p.first && map[p.second.first][p.second.second] == '.') {
+                        size_t b = p.second.first * width + p.second.second;
+                        distances[a][b] = 1;
+                    }
+                }
+            }
+        }
+    }
+    for (size_t k = 0; k < size; k++) {
+        for (size_t i = 0; i < size; i++) {
+            for (size_t j = 0; j < size; j++) {
+                if (distances[i][j] > distances[i][k] + distances[k][j]) {
+                    distances[i][j] = distances[i][k] + distances[k][j];
+                }
+            }
+        }
+    }
+}
+
 Map::Map(const std::string &filename) {
     std::ifstream fin(filename);
     if (!fin.is_open()) {
@@ -68,8 +97,26 @@ Map::Map(const std::string &filename) {
             this->map[i][j] = line[j];
         }
     }
-
+    fin.close();
     std::cerr << "Map " << filename << " imported" << std::endl;
+
+    size_t size = width * height;
+    distances.resize(size, std::vector<size_t>(size, std::numeric_limits<size_t>::max() / 2));
+    fin.open(filename + ".distance");
+    if (!fin.is_open()) {
+        throw std::runtime_error("map distance file not found");
+    }
+    std::istringstream iss;
+    while (std::getline(fin, line)) {
+        if (line.empty()) continue;
+        iss.clear();
+        iss.str(line);
+        size_t x1, y1, x2, y2, distance;
+        iss >> x1 >> y1 >> x2 >> y2 >> distance;
+        distances[x1 * width + y1][x2 * width + y2] = distance;
+    }
+    fin.close();
+    std::cerr << "Map " << filename << " distances imported" << std::endl;
 }
 
 const std::vector<char> &Map::operator[](size_t index) const {
@@ -354,4 +401,10 @@ size_t Map::getDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_
     if (start.second > end.second) distance += start.second - end.second;
     else distance += end.second - start.second;
     return distance;
+}
+
+size_t Map::getGraphDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end) {
+    size_t a = start.first * width + start.second;
+    size_t b = end.first * width + end.second;
+    return distances[a][b];
 }
