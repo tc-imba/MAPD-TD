@@ -19,6 +19,7 @@ add_executable(MAPF-generate generate/main.cpp)
 
 add_executable(MAPF-generate-well-formed generate/well-formed.cpp solver/Map.cpp solver/Manager.cpp
         solver/Scenario.cpp solver/Solver.cpp)
+add_executable(MAPF-generate-well-formed-new generate/well-formed-new.cpp solver/Map.cpp solver/Manager.cpp solver/Scenario.cpp solver/Solver.cpp)
 add_executable(MAPF-generate-distance generate/distance.cpp)
 
 #set(CMAKE_AUTOMOC ON)

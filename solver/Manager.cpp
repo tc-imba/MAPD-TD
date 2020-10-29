@@ -232,13 +232,13 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
     size_t taskSelectedAgent = std::numeric_limits<size_t>::max();
     task->released = true;
 
-    if (taskBoundFlag && minBeta >= 0 && agentMaxTimestamp > 0) {
+    if (!recalculate && taskBoundFlag && minBeta >= 0 && agentMaxTimestamp > 0) {
         auto &agent = agents[agentMaxTimestampAgent];
         auto pos = agent.currentPos;
         size_t agentMinTime = map->getGraphDistance(agent.currentPos, task->scenario.getStart()) +
                               map->getGraphDistance(task->scenario.getStart(), task->scenario.getEnd());
         if ((double) agentMaxTimestamp + agentMinTime < deadline - minBeta) {
-            std::cerr << "skip " << j << std::endl;
+//            std::cerr << "skip " << j << std::endl;
             skipFlag = true;
             task->released = false;
         }
