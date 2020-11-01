@@ -14,12 +14,14 @@
 Manager::Manager(std::string dataPath, size_t maxStep, size_t windowSize,
                  bool boundFlag, bool sortFlag, bool multiLabelFlag, bool occupiedFlag,
                  bool deadlineBoundFlag, bool taskBoundFlag,
-                 bool recalculateFlag, bool reserveAllFlag)
+                 bool recalculateFlag, bool reserveAllFlag,
+                 bool skipFlag)
         : dataPath(std::move(dataPath)), maxStep(maxStep), windowSize(windowSize),
           boundFlag(boundFlag), sortFlag(sortFlag),
           multiLabelFlag(multiLabelFlag), occupiedFlag(occupiedFlag),
           deadlineBoundFlag(deadlineBoundFlag), taskBoundFlag(taskBoundFlag),
-          recalculateFlag(recalculateFlag), reserveAllFlag(reserveAllFlag) {}
+          recalculateFlag(recalculateFlag), reserveAllFlag(reserveAllFlag),
+          skipFlag(skipFlag) {}
 
 Map *Manager::loadMapFile(const std::string &mapName) {
     auto filePath = dataPath + "/map/" + mapName;
@@ -226,7 +228,7 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
         upperBound = infinite;
     }
 
-    bool skipFlag = false;
+    bool skipAllFlag = false;
     double taskMaxBeta = -1;
     size_t taskMinAgentTime = std::numeric_limits<size_t>::max();
     size_t taskSelectedAgent = std::numeric_limits<size_t>::max();
@@ -239,7 +241,7 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
                               map->getGraphDistance(task->scenario.getStart(), task->scenario.getEnd());
         if ((double) agentMaxTimestamp + agentMinTime < deadline - minBeta) {
 //            std::cerr << "skip " << j << std::endl;
-            skipFlag = true;
+            skipAllFlag = true;
             task->released = false;
         }
     }
@@ -261,6 +263,38 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
         }
     }
 
+    if (skipFlag) {
+        for (auto &p : sortAgent) {
+            auto i = p.first;
+            auto &agent = agents[i];
+            if (!recalculate && !agent.flexibility[j].path.empty()) {
+                double beta = agent.flexibility[j].beta;
+                if (beta >= 0) {
+                    if (boundFlag) {
+                        if (minBeta >= 0 && beta > minBeta) {
+                            skipAllFlag = true;
+                        }
+                        upperBound = std::min(upperBound, (size_t) (deadline - beta + 1));
+                    }
+                    if (!recalculate) {
+                        if (beta > taskMaxBeta || (beta == taskMaxBeta && i < taskSelectedAgent)) {
+                            taskMaxBeta = beta;
+                            taskSelectedAgent = i;
+                        }
+                    } else {
+                        size_t agentTime = agent.flexibility[j].path.back().leaveTime + 1 - agent.lastTimeStamp;
+                        // break tie with smaller agent id
+                        if (agentTime < taskMinAgentTime || (agentTime == taskMinAgentTime && i < taskSelectedAgent)) {
+                            taskSelectedAgent = i;
+                            taskMinAgentTime = agentTime;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
 
     for (auto &p : sortAgent) {
         auto i = p.first;
@@ -279,11 +313,16 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
                 upperBound = agent.lastTimeStamp + taskMinAgentTime;
             }
             upperBound = std::min(upperBound, (size_t) deadline + 1);
+        } else {
+            // use previous result
+            if (skipFlag && !agent.flexibility[j].path.empty()) {
+                continue;
+            }
         }
 
         size_t agentMinTime = map->getGraphDistance(agent.currentPos, task->scenario.getStart()) +
                               map->getGraphDistance(task->scenario.getStart(), task->scenario.getEnd());
-        if (skipFlag || agent.lastTimeStamp + agentMinTime > upperBound) {
+        if (skipAllFlag || agent.lastTimeStamp + agentMinTime > upperBound) {
             auto beta = p.second;
             if (beta < 0) beta = -1;
             else if (beta < minBeta) beta = minBeta;
@@ -379,7 +418,7 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
             if (beta >= 0) {
                 if (boundFlag) {
                     if (minBeta >= 0 && beta > minBeta) {
-                        skipFlag = true;
+                        skipAllFlag = true;
                     }
                     upperBound = std::min(upperBound, (size_t) (deadline - beta + 1));
                 }
@@ -433,7 +472,7 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
     task->maxBetaAgent = taskSelectedAgent;
 
 
-    if (!skipFlag && taskMaxBeta >= 0 &&
+    if (!skipAllFlag && taskMaxBeta >= 0 &&
         (minBeta < 0 || taskMaxBeta < minBeta || (taskMaxBeta == minBeta && j < minBetaTask))) {
         minBeta = taskMaxBeta;
         minBetaTask = j;
@@ -560,7 +599,9 @@ bool Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector
             savedAgents.emplace_back(j, agents[j]);
             if (reservePath(solver, j)) {
                 successAgents++;
-            } else break;
+            } else {
+                break;
+            }
         }
         if (successAgents == reservingAgentSet.size()) {
             // reserve agent successfully
@@ -609,7 +650,7 @@ bool Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector
                 map->addNodeOccupied(agent.currentPos, agent.lastTimeStamp, agent.lastTimeStamp + 1);
             }
             map->addWaitingAgent(agent.currentPos, agent.lastTimeStamp, i);
-            std::cout << "fail: " << i << " " << occupiedAgent << std::endl;
+            std::cout << "RP: " << i << " " << occupiedAgent << std::endl;
             result = false;
         }
     }
@@ -878,12 +919,15 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
 //    std::vector<std::pair<size_t, size_t >> occupiedAgent(tasks.size(), notOccupied);
 
     for (size_t i = 0; i < agents.size(); i++) {
+        auto &agent = agents[i];
 
         // remember previous flexibility
         std::vector<Flexibility> prevFlexibility;
-        prevFlexibility.swap(agents[i].flexibility);
-        agents[i].flexibility.resize(tasks.size());
+        prevFlexibility.swap(agent.flexibility);
+        agent.flexibility.resize(tasks.size());
         size_t prevIndex = 0;
+
+        map->removeNodeOccupied(agent.currentPos, agent.lastTimeStamp, agent.lastTimeStamp + 1);
 
         for (size_t j = 0; j < tasks.size(); j++) {
             auto &task = tasks[j];
@@ -896,13 +940,20 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
             double beta = -1;
             if (prevIndex < prevFlexibility.size()) {
                 beta = prevFlexibility[prevIndex].beta;
+                // use prev flexibility if no conflict
+                if (skipFlag && !isPathConflict(solver, agent, prevFlexibility[prevIndex].path)) {
+                    agent.flexibility[j] = prevFlexibility[prevIndex];
+                }
             } else {
                 // here we use the manhattan distance to sort for beta < 0
-                beta -= std::abs((double) agents[i].currentPos.first - task->scenario.getStart().first);
-                beta -= std::abs((double) agents[i].currentPos.second - task->scenario.getStart().second);
+                beta -= std::abs((double) agent.currentPos.first - task->scenario.getStart().first);
+                beta -= std::abs((double) agent.currentPos.second - task->scenario.getStart().second);
             }
             sortAgents[j][i] = std::make_pair(i, beta);
         }
+
+        map->addNodeOccupied(agent.currentPos, agent.lastTimeStamp, agent.lastTimeStamp + 1);
+
     }
 
     Count count;

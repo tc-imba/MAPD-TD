@@ -13,7 +13,8 @@
 std::string generateOutputFileName(const std::string &scheduler, int algorithmId,
                                    bool boundFlag, bool sortFlag, bool multiLabelFlag,
                                    bool deadlineBoundFlag, bool taskBoundFlag,
-                                   bool recalculateFlag, bool reserveAllFlag) {
+                                   bool recalculateFlag, bool reserveAllFlag,
+                                   bool skipFlag) {
     std::ostringstream oss;
     oss << scheduler << "-algo-" << algorithmId;
     if (boundFlag) {
@@ -36,6 +37,9 @@ std::string generateOutputFileName(const std::string &scheduler, int algorithmId
     }
     if (reserveAllFlag) {
         oss << "-reserve";
+    }
+    if (skipFlag) {
+        oss << "-skip";
     }
     oss << ".txt";
     return oss.str();
@@ -75,6 +79,7 @@ int main(int argc, const char *argv[]) {
     optionParser.add("", false, 0, 0, "Use Task Bound", "-tb", "--task-bound");
     optionParser.add("", false, 0, 0, "Recalculate After Flex", "-re", "--recalculate");
     optionParser.add("", false, 0, 0, "Reserve all", "-ra", "--reserve-all");
+    optionParser.add("", false, 0, 0, "Skip no conflict", "-skip", "--skip-no-conflict");
     optionParser.parse(argc, argv);
 
     if (optionParser.isSet("-h")) {
@@ -87,7 +92,7 @@ int main(int argc, const char *argv[]) {
     std::string dataPath, taskFile, outputFile, scheduler;
     double phi;
     int algorithmId;
-    bool boundFlag, sortFlag, multiLabelFlag, deadlineBoundFlag, taskBoundFlag, recalculateFlag, reserveAllFlag;
+    bool boundFlag, sortFlag, multiLabelFlag, deadlineBoundFlag, taskBoundFlag, recalculateFlag, reserveAllFlag, skipFlag;
     unsigned long long maxStep, windowSize;
 
     optionParser.get("--data")->getString(dataPath);
@@ -105,13 +110,15 @@ int main(int argc, const char *argv[]) {
     taskBoundFlag = optionParser.isSet("--task-bound");
     recalculateFlag = optionParser.isSet("--recalculate");
     reserveAllFlag = optionParser.isSet("--reserve-all");
+    skipFlag = optionParser.isSet("--skip-no-conflict");
 
     auto coutBuf = std::cout.rdbuf();
     std::ofstream fout;
     if (!outputFile.empty()) {
         if (outputFile == "auto") {
             outputFile = generateOutputFileName(scheduler, algorithmId, boundFlag, sortFlag, multiLabelFlag,
-                                                deadlineBoundFlag, taskBoundFlag, recalculateFlag, reserveAllFlag);
+                                                deadlineBoundFlag, taskBoundFlag, recalculateFlag, reserveAllFlag,
+                                                skipFlag);
         }
         fout.open(outputFile);
         std::cout.rdbuf(fout.rdbuf());
@@ -121,7 +128,9 @@ int main(int argc, const char *argv[]) {
     Manager manager(
             dataPath, maxStep, windowSize,
             boundFlag, sortFlag, multiLabelFlag, true,
-            deadlineBoundFlag, taskBoundFlag, recalculateFlag, reserveAllFlag
+            deadlineBoundFlag, taskBoundFlag,
+            recalculateFlag, reserveAllFlag,
+            skipFlag
     );
     auto map = manager.loadTaskFile(taskFile);
 
