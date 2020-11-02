@@ -3,7 +3,7 @@ import subprocess
 import functools
 
 project_root = os.path.dirname(os.path.dirname(__file__))
-program = os.path.join(project_root, "cmake-build-release", "MAPF-generate-well-formed")
+program = os.path.join(project_root, "cmake-build-release", "MAPF-generate-well-formed-new")
 
 
 def generate(x, y, agent, agent_per_task, seed, release=False):

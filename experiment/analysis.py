@@ -1,7 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 
-name = "result-big"
+name = "result"
 project_root = os.path.dirname(os.path.dirname(__file__))
 experiment_dir = os.path.dirname(__file__)
 result_dir = os.path.join(project_root, name)
@@ -19,7 +19,8 @@ def parse(filename):
     bound = str("bound" in args)
     sort = str("sort" in args)
     mlabel = str("mlabel" in args)
-    reserve = str("reserve" in args)
+    # reserve = str("reserve" in args)
+    skip = str("skip" in args)
     # print(size, agent, agent_per_task, phi, scheduler, bound, sort, mlabel)
 
     task_num = int(agent) * int(agent_per_task)
@@ -32,7 +33,7 @@ def parse(filename):
             if "time: " in line:
                 time_ms = line[6:-3]
     # print(task_success, task_num, time_ms)
-    return [size, agent, agent_per_task, seed, phi, scheduler, window, bound, sort, mlabel, reserve,
+    return [size, agent, agent_per_task, seed, phi, scheduler, window, bound, sort, mlabel, skip,
             str(task_num), str(task_success), str(time_ms)]
 
 
@@ -56,7 +57,7 @@ def plot(phi, data):
 
 def main():
     header = ["size", "agent", "task_per_agent", "phi", "scheduler", "window",
-              "bound", "sort", "mlabel", "reserve", "task_num", "task_success", "time_ms"]
+              "bound", "sort", "mlabel", "skip", "task_num", "task_success", "time_ms"]
 
     data = {}
     result_dict = {}

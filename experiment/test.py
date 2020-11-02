@@ -12,7 +12,7 @@ workers = 20
 
 TIMEOUT = 36000
 
-MAP = "large"
+MAP = "small"
 
 if MAP == "small":
     MAP_SIZE = (21, 35)
@@ -20,20 +20,20 @@ if MAP == "small":
     EXPERIMENT_TIMES = 10
 else:
     MAP_SIZE = (33, 46)
-    # AGENTS = [60, 90, 120, 150, 180]
-    AGENTS = [120, 150, 180]
+    AGENTS = [60, 90, 120, 150, 180]
+    # AGENTS = [120, 150, 180]
     EXPERIMENT_TIMES = 10
-# TASKS_PER_AGENT = [2, 5, 10]
-TASKS_PER_AGENT = [10]
+TASKS_PER_AGENT = [2, 5, 10]
+# TASKS_PER_AGENT = [10]
 PHIS = [-0.25, -0.1, 0, 0.1, 0.25]
 # PHIS_180 = [-0.25, -0.1, 0.25]
 
-EXPERIMENT_JOBS = EXPERIMENT_TIMES * len(AGENTS) * len(TASKS_PER_AGENT) * len(PHIS) * 1
+EXPERIMENT_JOBS = EXPERIMENT_TIMES * len(AGENTS) * len(TASKS_PER_AGENT) * len(PHIS) * 6
 count = 0
 
 
 async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex", window_size=0,
-              phi=0.2, bound=True, sort=True, mlabel=True, reserve=False):
+              phi=0.2, bound=True, sort=True, mlabel=True, reserve=False, skip=False):
     # os.chdir(project_root)
     base_filename = "%d-%d-%d-%d-%d" % (size[0], size[1], agent, task_per_agent, seed)
     task_filename = "task/well-formed-%s.task" % base_filename
@@ -60,6 +60,9 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex
     if reserve:
         args.append("--reserve-all")
         output_filename += "-reserve"
+    if skip:
+        args.append("-skip")
+        output_filename += "-skip"
     args += ["--output", os.path.join(result_dir, output_filename)]
     # print(args)
 
@@ -96,8 +99,9 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
             _run = functools.partial(run, size=size, agent=agent, task_per_agent=task_per_agent, seed=seed,
                                      scheduler=scheduler, window_size=window_size, phi=phi)
             tasks += [
-                _run(bound=True, sort=True, mlabel=True, reserve=True),
-                # _run(bound=True, sort=True, mlabel=True, reserve=False),
+                # _run(bound=True, sort=True, mlabel=True, reserve=True),
+                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True),
+                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=False),
                 # _run(bound=False, sort=False, mlabel=True, reserve=False),
                 # _run(bound=True, sort=False, mlabel=True, reserve=False),
             ]
