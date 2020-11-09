@@ -192,8 +192,8 @@ def plot_dummy_path(df, size, phi):
 
 
 def main():
-    small_filename = os.path.join(experiment_dir, "small", "result.csv")
-    large_filename = os.path.join(experiment_dir, "big", "result.csv")
+    small_filename = os.path.join(experiment_dir, "small", "result-new-big.csv")
+    large_filename = os.path.join(experiment_dir, "big", "result-new-big.csv")
     small_df = pd.read_csv(small_filename)
     small_df['success_rate'] = small_df['task_success'] / small_df['task_num']
     large_df = pd.read_csv(large_filename)

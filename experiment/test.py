@@ -20,7 +20,8 @@ if MAP == "small":
     EXPERIMENT_TIMES = 10
 else:
     MAP_SIZE = (33, 46)
-    AGENTS = [60, 90, 120, 150, 180]
+    AGENTS = [60, 90, 120, 150]
+    # AGENTS = [60, 90, 120, 150, 180]
     # AGENTS = [120, 150, 180]
     EXPERIMENT_TIMES = 10
 TASKS_PER_AGENT = [2, 5, 10]
@@ -28,7 +29,7 @@ TASKS_PER_AGENT = [2, 5, 10]
 PHIS = [-0.25, -0.1, 0, 0.1, 0.25]
 # PHIS_180 = [-0.25, -0.1, 0.25]
 
-EXPERIMENT_JOBS = EXPERIMENT_TIMES * len(AGENTS) * len(TASKS_PER_AGENT) * len(PHIS) * 6
+EXPERIMENT_JOBS = EXPERIMENT_TIMES * len(AGENTS) * len(TASKS_PER_AGENT) * len(PHIS) * 2
 count = 0
 
 
@@ -100,7 +101,7 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
                                      scheduler=scheduler, window_size=window_size, phi=phi)
             tasks += [
                 # _run(bound=True, sort=True, mlabel=True, reserve=True),
-                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True),
+                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True),
                 _run(bound=True, sort=True, mlabel=True, reserve=False, skip=False),
                 # _run(bound=False, sort=False, mlabel=True, reserve=False),
                 # _run(bound=True, sort=False, mlabel=True, reserve=False),
@@ -110,9 +111,9 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
 
 async def run_scheduler(size=(21, 35), agent=10, task_per_agent=2):
     await asyncio.gather(
-        run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex"),
+        # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex"),
         # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex", window_size=20),
-        # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="edf"),
+        run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="edf"),
     )
 
 

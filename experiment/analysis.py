@@ -25,6 +25,7 @@ def parse(filename):
 
     task_num = int(agent) * int(agent_per_task)
     task_success = 0
+    reserve = 0
     time_ms = -1
     with open(os.path.join(result_dir, filename)) as f:
         for line in f.readlines():
@@ -32,9 +33,11 @@ def parse(filename):
                 task_success += 1
             if "time: " in line:
                 time_ms = line[6:-3]
+            if "reserve" in line:
+                reserve += 1
     # print(task_success, task_num, time_ms)
     return [size, agent, agent_per_task, seed, phi, scheduler, window, bound, sort, mlabel, skip,
-            str(task_num), str(task_success), str(time_ms)]
+            str(task_num), str(task_success), str(reserve), str(time_ms)]
 
 
 def plot(phi, data):
@@ -57,7 +60,7 @@ def plot(phi, data):
 
 def main():
     header = ["size", "agent", "task_per_agent", "phi", "scheduler", "window",
-              "bound", "sort", "mlabel", "skip", "task_num", "task_success", "time_ms"]
+              "bound", "sort", "mlabel", "skip", "task_num", "task_success", "reserve", "time_ms"]
 
     data = {}
     result_dict = {}
@@ -67,7 +70,7 @@ def main():
         if float(row[-1]) < 0:
             continue
         row_signature = ','.join(row[:3] + row[4:12])
-        row_data = row[-2:]
+        row_data = row[-3:]
         if row_signature not in data:
             data[row_signature] = []
         data[row_signature].append(row_data)
@@ -85,7 +88,7 @@ def main():
     with open(os.path.join(experiment_dir, name + ".csv"), "w") as f:
         f.write(",".join(header) + "\n")
         for key, value in data.items():
-            f.write("%s,%f,%f\n" % (key, value[0], value[1]))
+            f.write("%s,%f,%f,%f\n" % (key, value[0], value[1], value[2]))
 
     exit(0)
 
