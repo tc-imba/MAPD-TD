@@ -59,10 +59,10 @@ int main() {
         for (int j = 0; j < width; j++) {
             int a = i * width + j;
             distances[a][a] = 0;
-            if (map[i][j] == '.') {
+            if (map[i][j] != '@') {
                 for (auto direction : directions) {
                     auto p = getPosByDirection({i, j}, direction, height, width);
-                    if (p.first && map[p.second.first][p.second.second] == '.') {
+                    if (p.first && map[p.second.first][p.second.second] != '@') {
                         int b = p.second.first * width + p.second.second;
                         distances[a][b] = 1;
 //                        std::cout << i << " " << j << " " << p.second.first << " " << p.second.second << std::endl;

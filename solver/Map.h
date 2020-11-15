@@ -105,6 +105,8 @@ public:
     static size_t getDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
 
     size_t getGraphDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
+
+    size_t getExtraCost(std::pair<size_t, size_t> pos);
 };
 
 

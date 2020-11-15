@@ -14,7 +14,7 @@ std::string generateOutputFileName(const std::string &scheduler, int algorithmId
                                    bool boundFlag, bool sortFlag, bool multiLabelFlag,
                                    bool deadlineBoundFlag, bool taskBoundFlag,
                                    bool recalculateFlag, bool reserveAllFlag,
-                                   bool skipFlag) {
+                                   bool skipFlag, bool extraCostFlag) {
     std::ostringstream oss;
     oss << scheduler << "-algo-" << algorithmId;
     if (boundFlag) {
@@ -41,6 +41,9 @@ std::string generateOutputFileName(const std::string &scheduler, int algorithmId
     if (skipFlag) {
         oss << "-skip";
     }
+    if (extraCostFlag) {
+        oss << "-ec";
+    }
     oss << ".txt";
     return oss.str();
 }
@@ -56,7 +59,8 @@ int main(int argc, const char *argv[]) {
     optionParser.add("", false, 0, 0, "Display this Message.", "-h", "--help");
 
     optionParser.add("test-benchmark", false, 1, 0, "Data Path", "-d", "--data");
-    optionParser.add("task/well-formed-21-35-10-2.task", false, 1, 0, "Task File (Relative to Data Path)", "-t", "--task");
+    optionParser.add("task/well-formed-21-35-10-2.task", false, 1, 0, "Task File (Relative to Data Path)", "-t",
+                     "--task");
     optionParser.add("", false, 1, 0, "Output File", "-o", "--output");
     optionParser.add("flex", false, 1, 0, "Scheduler (flex/edf)", "--scheduler");
 
@@ -80,6 +84,7 @@ int main(int argc, const char *argv[]) {
     optionParser.add("", false, 0, 0, "Recalculate After Flex", "-re", "--recalculate");
     optionParser.add("", false, 0, 0, "Reserve all", "-ra", "--reserve-all");
     optionParser.add("", false, 0, 0, "Skip no conflict", "-skip", "--skip-no-conflict");
+    optionParser.add("", false, 0, 0, "Extra Cost", "-ec", "--extra-cost");
     optionParser.parse(argc, argv);
 
     if (optionParser.isSet("-h")) {
@@ -92,7 +97,8 @@ int main(int argc, const char *argv[]) {
     std::string dataPath, taskFile, outputFile, scheduler;
     double phi;
     int algorithmId;
-    bool boundFlag, sortFlag, multiLabelFlag, deadlineBoundFlag, taskBoundFlag, recalculateFlag, reserveAllFlag, skipFlag;
+    bool boundFlag, sortFlag, multiLabelFlag, deadlineBoundFlag,
+            taskBoundFlag, recalculateFlag, reserveAllFlag, skipFlag, extraCostFlag;
     unsigned long long maxStep, windowSize;
 
     optionParser.get("--data")->getString(dataPath);
@@ -111,6 +117,7 @@ int main(int argc, const char *argv[]) {
     recalculateFlag = optionParser.isSet("--recalculate");
     reserveAllFlag = optionParser.isSet("--reserve-all");
     skipFlag = optionParser.isSet("--skip-no-conflict");
+    extraCostFlag = optionParser.isSet("--extra-cost");
 
     auto coutBuf = std::cout.rdbuf();
     std::ofstream fout;
@@ -118,7 +125,7 @@ int main(int argc, const char *argv[]) {
         if (outputFile == "auto") {
             outputFile = generateOutputFileName(scheduler, algorithmId, boundFlag, sortFlag, multiLabelFlag,
                                                 deadlineBoundFlag, taskBoundFlag, recalculateFlag, reserveAllFlag,
-                                                skipFlag);
+                                                skipFlag, extraCostFlag);
         }
         fout.open(outputFile);
         std::cout.rdbuf(fout.rdbuf());
@@ -130,7 +137,7 @@ int main(int argc, const char *argv[]) {
             boundFlag, sortFlag, multiLabelFlag, true,
             deadlineBoundFlag, taskBoundFlag,
             recalculateFlag, reserveAllFlag,
-            skipFlag
+            skipFlag, extraCostFlag
     );
     auto map = manager.loadTaskFile(taskFile);
 

@@ -61,13 +61,15 @@ Solver::findNotOccupiedInterval(boost::icl::interval_set<size_t> *occupied, size
     return {it->upper(), std::numeric_limits<size_t>::max()};
 }
 
-std::pair<size_t, size_t> Solver::findNotOccupiedInterval(boost::icl::interval_set<size_t> *occupied, size_t startTime) {
+std::pair<size_t, size_t>
+Solver::findNotOccupiedInterval(boost::icl::interval_set<size_t> *occupied, size_t startTime) {
     return findNotOccupiedInterval(occupied, startTime, startTime + 1);
 }
 
 
 // find the smallest newTime >= startTime so that [newTime, newTime + duration) is not occupied
-size_t Solver::findFirstNotOccupiedTimestamp(boost::icl::interval_set<size_t> *occupied, size_t startTime, size_t duration) {
+size_t
+Solver::findFirstNotOccupiedTimestamp(boost::icl::interval_set<size_t> *occupied, size_t startTime, size_t duration) {
     if (!occupied || occupied->empty()) return startTime;
     auto interval = boost::icl::discrete_interval<size_t>(startTime, startTime + duration);
 
@@ -85,7 +87,8 @@ size_t Solver::findFirstNotOccupiedTimestamp(boost::icl::interval_set<size_t> *o
 
 // find the smallest newTime >= startTime so that [newTime, newTime + duration) is not occupied,
 // and newTime + duration is not occupied2
-size_t Solver::findFirstNotOccupiedTimestamp(boost::icl::interval_set<size_t> *occupied, boost::icl::interval_set<size_t> *occupied2,
+size_t Solver::findFirstNotOccupiedTimestamp(boost::icl::interval_set<size_t> *occupied,
+                                             boost::icl::interval_set<size_t> *occupied2,
                                              size_t startTime, size_t duration) {
     if (!occupied || occupied->empty()) {
         return findFirstNotOccupiedTimestamp(occupied2, startTime + duration, 1) - duration;
@@ -132,9 +135,11 @@ Solver::createVirtualNode(std::pair<size_t, size_t> pos, size_t leaveTime, Solve
     } else {
         estimateTime += Map::getDistance(pos, scenario->getEnd());
     }
+    size_t extraCost = map->getExtraCost(pos);
+    if (parent) extraCost += parent->extraCost;
 //    std::cout << pos.first << " " << pos.second << " " << checkpoint << " " << leaveTime << " " << estimateTime << std::endl;
 //    size_t estimateTime = leaveTime + Map::getDistance(pos, scenario->getEnd());
-    return new VirtualNode{pos, leaveTime, estimateTime, parent, child, checkpoint, hasChild, isOpen};
+    return new VirtualNode{pos, leaveTime, estimateTime, parent, child, checkpoint, extraCost, hasChild, isOpen};
 }
 
 
@@ -152,6 +157,10 @@ Solver::VirtualNode *Solver::removeVirtualNodeFromList(std::multimap<size_t, Vir
 
 void Solver::addVirtualNodeToList(std::multimap<size_t, VirtualNode *> &list,
                                   Solver::VirtualNode *vNode, bool editNode) {
+//    if (vNode->isOpen && extraCostFlag && maybeSuccessNode && vNode->leaveTime > maybeSuccessNode->leaveTime) {
+//        delete vNode;
+//        return;
+//    }
     if (vNode->estimateTime >= deadline) {
         delete vNode;
         return;
@@ -189,7 +198,7 @@ void Solver::initialize() {
         for (size_t j = 0; j < map->getWidth(); j++) {
             for (auto direction : Map::directions) {
                 auto p = map->getPosByDirection({i, j}, direction);
-                if (!p.first || (*map)[p.second.first][p.second.second] != '.') {
+                if (!p.first || (*map)[p.second.first][p.second.second] == '@') {
                     nodes[i][j].edges[(size_t) direction].available = false;
                 }
             }
@@ -223,11 +232,12 @@ void Solver::clean() {
     open.clear();
     closed.clear();
     successNode = nullptr;
+    maybeSuccessNode = nullptr;
 }
 
 
-Solver::Solver(Map *map, int algorithmId) : map(map), algorithmId(algorithmId) {
-
+Solver::Solver(Map *map, int algorithmId, bool extraCostFlag) :
+        map(map), algorithmId(algorithmId), extraCostFlag(extraCostFlag) {
 }
 
 Solver::~Solver() {
@@ -241,7 +251,7 @@ void Solver::initScenario(const Scenario *scenario, size_t startTime, size_t dea
     // skip the algorithm if start or end point is blocked
     auto start = scenario->getStart();
     auto end = scenario->getEnd();
-    if ((*map)[start.first][start.second] != '.' || (*map)[end.first][end.second] != '.') {
+    if ((*map)[start.first][start.second] == '@' || (*map)[end.first][end.second] == '@') {
         clean();
         return;
     }
@@ -322,12 +332,26 @@ void Solver::replaceNode(VirtualNode *vNode, std::pair<size_t, size_t> pos,
 
 
 Solver::VirtualNode *Solver::step() {
-    if (open.empty()) return nullptr;
+    if (open.empty()) {
+        if (extraCostFlag && maybeSuccessNode) {
+            successNode = maybeSuccessNode;
+            return successNode;
+        } else {
+            return nullptr;
+        }
+    }
 
     // Get a virtual node (v, h_v, v_p) off the OPEN list with the minimum h + g(v) value
     auto it = open.begin();
     auto vNode = removeVirtualNodeFromList(open, it, false);
     auto &node = nodes[vNode->pos.first][vNode->pos.second];
+
+    if (extraCostFlag && maybeSuccessNode) {
+        if (vNode->estimateTime > maybeSuccessNode->estimateTime + 1) {
+            successNode = maybeSuccessNode;
+            return successNode;
+        }
+    }
 
 //    if (logging) {
 //        std::cout << vNode->pos.first << " " << vNode->pos.second << " " << vNode->leaveTime << " " << vNode->checkpoint << std::endl;
@@ -347,7 +371,22 @@ Solver::VirtualNode *Solver::step() {
         if (vNode->checkpoint == scenario->size() - 1) {
             if (!vNode->hasChild) {
                 // we have found the solution and exit the algorithm
-                successNode = vNode;
+                if (extraCostFlag) {
+                    if (!maybeSuccessNode) {
+                        maybeSuccessNode = vNode;
+                    } else {
+                        assert(vNode->leaveTime <= maybeSuccessNode->leaveTime);
+                        std::cerr << vNode->extraCost << " " << maybeSuccessNode->extraCost << std::endl;
+                        if (vNode->extraCost < maybeSuccessNode->extraCost) {
+                            maybeSuccessNode = vNode;
+                        }
+                    }
+                    if (open.empty()) {
+                        successNode = maybeSuccessNode;
+                    }
+                } else {
+                    successNode = vNode;
+                }
                 return vNode;
             }
             break;

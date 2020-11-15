@@ -15,13 +15,13 @@ Manager::Manager(std::string dataPath, size_t maxStep, size_t windowSize,
                  bool boundFlag, bool sortFlag, bool multiLabelFlag, bool occupiedFlag,
                  bool deadlineBoundFlag, bool taskBoundFlag,
                  bool recalculateFlag, bool reserveAllFlag,
-                 bool skipFlag)
+                 bool skipFlag, bool extraCostFlag)
         : dataPath(std::move(dataPath)), maxStep(maxStep), windowSize(windowSize),
           boundFlag(boundFlag), sortFlag(sortFlag),
           multiLabelFlag(multiLabelFlag), occupiedFlag(occupiedFlag),
           deadlineBoundFlag(deadlineBoundFlag), taskBoundFlag(taskBoundFlag),
           recalculateFlag(recalculateFlag), reserveAllFlag(reserveAllFlag),
-          skipFlag(skipFlag) {}
+          skipFlag(skipFlag), extraCostFlag(extraCostFlag) {}
 
 Map *Manager::loadMapFile(const std::string &mapName) {
     auto filePath = dataPath + "/map/" + mapName;
@@ -126,7 +126,7 @@ Map *Manager::loadTaskFile(const std::string &filename) {
 }
 
 void Manager::leastFlexFirstAssign(Map *map, int algorithm, double phi) {
-    Solver solver(map, algorithm);
+    Solver solver(map, algorithm, extraCostFlag);
 
     // add node constraints for parking locations
     for (size_t i = 0; i < agents.size(); i++) {

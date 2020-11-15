@@ -25,18 +25,33 @@ string generateMap(const string &dataPath, size_t deliveryWidth, size_t delivery
          << "width " << maxY << endl
          << "map" << endl;
 
+    vector<string> map(maxX, string(maxY, '.'));
+
     for (int i = 0; i < maxX; i++) {
         for (int j = 0; j < maxY; j++) {
             if (i % 4 == 2 && j >= 7 && (j - 7) % (deliveryWidth + 1) != deliveryWidth && j < maxY - 7) {
-                fout << "@";
-            } else {
-                fout << ".";
+                map[i][j] = '@';
+//                fout << "@";
+//            } else {
+//                fout << ".";
             }
         }
-        fout << endl;
+//        fout << endl;
     }
-    fout.close();
 
+    for (size_t i = 1; i < maxX; i += 2) {
+        for (size_t j = 7; j < maxY - 7; j++) {
+            if ((j - 7) % (deliveryWidth + 1) != deliveryWidth) {
+                map[i][j] = 't';
+            }
+        }
+    }
+
+    for (auto &row : map) {
+        fout << row << endl;
+    }
+
+    fout.close();
     return mapName;
 }
 

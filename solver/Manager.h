@@ -87,6 +87,7 @@ private:
     bool recalculateFlag;
     bool reserveAllFlag;
     bool skipFlag;
+    bool extraCostFlag;
 
     void applyReservedPath();
 
@@ -122,7 +123,7 @@ public:
                      bool multiLabelFlag = true, bool occupiedFlag = true,
                      bool deadlineBoundFlag = true, bool taskBoundFlag = true,
                      bool recalculateFlag = true, bool reserveAllFlag = true,
-                     bool skipFlag = false);
+                     bool skipFlag = false, bool extraCostFlag = false);
 
     Map *getMap(const std::string &mapName);
 
