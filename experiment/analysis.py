@@ -1,7 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 
-name = "result"
+name = "result-new-big"
 project_root = os.path.dirname(os.path.dirname(__file__))
 experiment_dir = os.path.dirname(__file__)
 result_dir = os.path.join(project_root, name)
@@ -21,6 +21,7 @@ def parse(filename):
     mlabel = str("mlabel" in args)
     # reserve = str("reserve" in args)
     skip = str("skip" in args)
+    task_bound = str("tb" in args)
     # print(size, agent, agent_per_task, phi, scheduler, bound, sort, mlabel)
 
     task_num = int(agent) * int(agent_per_task)
@@ -37,7 +38,7 @@ def parse(filename):
                 reserve += 1
     # print(task_success, task_num, time_ms)
     return [size, agent, agent_per_task, seed, phi, scheduler, window, bound, sort, mlabel, skip,
-            str(task_num), str(task_success), str(reserve), str(time_ms)]
+            task_bound, str(task_num), str(task_success), str(reserve), str(time_ms)]
 
 
 def plot(phi, data):
@@ -59,8 +60,8 @@ def plot(phi, data):
 
 
 def main():
-    header = ["size", "agent", "task_per_agent", "phi", "scheduler", "window",
-              "bound", "sort", "mlabel", "skip", "task_num", "task_success", "reserve", "time_ms"]
+    header = ["size", "agent", "task_per_agent", "phi", "scheduler", "window", "bound", "sort", "mlabel", "skip",
+              "task_bound", "task_num", "task_success", "reserve", "time_ms"]
 
     data = {}
     result_dict = {}
@@ -69,7 +70,7 @@ def main():
         row = parse(filename)
         if float(row[-1]) < 0:
             continue
-        row_signature = ','.join(row[:3] + row[4:12])
+        row_signature = ','.join(row[:3] + row[4:13])
         row_data = row[-3:]
         if row_signature not in data:
             data[row_signature] = []

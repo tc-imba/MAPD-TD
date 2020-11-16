@@ -12,7 +12,7 @@ workers = 20
 
 TIMEOUT = 36000
 
-MAP = "small"
+MAP = "large"
 
 if MAP == "small":
     MAP_SIZE = (21, 35)
@@ -34,7 +34,7 @@ count = 0
 
 
 async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex", window_size=0,
-              phi=0.2, bound=True, sort=True, mlabel=True, reserve=False, skip=False):
+              phi=0.2, bound=True, sort=True, mlabel=True, reserve=False, skip=False, task_bound=False):
     # os.chdir(project_root)
     base_filename = "%d-%d-%d-%d-%d" % (size[0], size[1], agent, task_per_agent, seed)
     task_filename = "task/well-formed-%s.task" % base_filename
@@ -61,6 +61,9 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex
     if reserve:
         args.append("--reserve-all")
         output_filename += "-reserve"
+    if task_bound:
+        args.append("--task-bound")
+        output_filename += "-tb"
     if skip:
         args.append("-skip")
         output_filename += "-skip"
@@ -102,7 +105,7 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
             tasks += [
                 # _run(bound=True, sort=True, mlabel=True, reserve=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True),
-                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=False),
+                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True),
                 # _run(bound=False, sort=False, mlabel=True, reserve=False),
                 # _run(bound=True, sort=False, mlabel=True, reserve=False),
             ]
@@ -111,9 +114,9 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
 
 async def run_scheduler(size=(21, 35), agent=10, task_per_agent=2):
     await asyncio.gather(
-        # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex"),
+        run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex"),
         # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex", window_size=20),
-        run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="edf"),
+        # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="edf"),
     )
 
 
