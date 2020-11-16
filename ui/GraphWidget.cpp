@@ -100,7 +100,7 @@ void GraphWidget::setSolver(Solver *solver) {
     for (int i = 0; i < height; i++) {
         nodes[i].resize(width);
         for (int j = 0; j < width; j++) {
-            auto node = new Node(this, {i, j}, (*map)[i][j] != '.');
+            auto node = new Node(this, {i, j}, (*map)[i][j] == '@');
             scene->addItem(node);
             auto x = startX + nodeSize * j;
             auto y = startY + nodeSize * i;

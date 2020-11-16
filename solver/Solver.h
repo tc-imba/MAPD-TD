@@ -29,6 +29,7 @@ public:
         VirtualNode *parent;            // v_p
         std::pair<size_t, size_t> child;// v_c
         size_t checkpoint;
+        size_t extraCost;
         bool hasChild;
         bool isOpen;
     };
@@ -42,7 +43,7 @@ public:
     };
 
     struct Edge {
-//        std::pair<size_t, size_t> start, end;
+//        std::pair<size_t, siz e_t> start, end;
         bool available = true;
 //        std::map<size_t, size_t> *occupied = nullptr;
         boost::icl::interval_set<size_t> *occupied = nullptr;
@@ -67,9 +68,11 @@ private:
     Map *map;
     const Scenario *scenario;
     VirtualNode *successNode = nullptr;
+    VirtualNode *maybeSuccessNode = nullptr;
     const int algorithmId;
     bool logging = false;
     size_t deadline;
+    bool extraCostFlag;
 
 public:
     bool isOccupied(boost::icl::interval_set<size_t> *occupied, boost::icl::discrete_interval<size_t> interval);
@@ -115,7 +118,7 @@ private:
     replaceNode(VirtualNode *vNode, std::pair<size_t, size_t> pos, Node &neighborNode, Edge &edge, bool needExamine);
 
 public:
-    explicit Solver(Map *map, int algorithmId = 0);
+    explicit Solver(Map *map, int algorithmId = 0, bool extraCostFlag = false);
 
     ~Solver();
 

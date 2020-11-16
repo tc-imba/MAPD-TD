@@ -34,10 +34,10 @@ void Map::calculateDistances() {
         for (size_t j = 0; j < width; j++) {
             size_t a = i * width + j;
             distances[a][a] = 0;
-            if (map[i][j] == '.') {
+            if (map[i][j] != '@') {
                 for (auto direction : Map::directions) {
                     auto p = getPosByDirection({i, j}, direction);
-                    if (p.first && map[p.second.first][p.second.second] == '.') {
+                    if (p.first && map[p.second.first][p.second.second] != '@') {
                         size_t b = p.second.first * width + p.second.second;
                         distances[a][b] = 1;
                     }
@@ -407,4 +407,9 @@ size_t Map::getGraphDistance(std::pair<size_t, size_t> start, std::pair<size_t, 
     size_t a = start.first * width + start.second;
     size_t b = end.first * width + end.second;
     return distances[a][b];
+}
+
+size_t Map::getExtraCost(std::pair<size_t, size_t> pos) {
+    if (map[pos.first][pos.second] == 't') return 1;
+    return 0;
 }

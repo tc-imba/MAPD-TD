@@ -48,7 +48,7 @@ int main() {
     std::vector<std::pair<size_t, size_t> > availablePoints;
     for (size_t i = 0; i < map->getHeight(); i++) {
         for (size_t j = 0; j < map->getWidth(); j++) {
-            if ((*map)[i][j] == '.') {
+            if ((*map)[i][j] != '@') {
                 availablePoints.emplace_back(i, j);
             }
         }
