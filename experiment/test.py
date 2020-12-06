@@ -24,8 +24,8 @@ else:
     # AGENTS = [60, 90, 120, 150, 180]
     AGENTS = [180]
     EXPERIMENT_TIMES = 10
-TASKS_PER_AGENT = [2, 5, 10]
-# TASKS_PER_AGENT = [10]
+# TASKS_PER_AGENT = [2, 5, 10]
+TASKS_PER_AGENT = [10, 2, 5]
 PHIS = [-0.25, -0.1, 0, 0.1, 0.25]
 # PHIS_180 = [-0.25, -0.1, 0.25]
 
@@ -105,7 +105,8 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
             tasks += [
                 # _run(bound=True, sort=True, mlabel=True, reserve=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True),
-                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True),
+                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=False),
+                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True),
                 # _run(bound=False, sort=False, mlabel=True, reserve=False),
                 # _run(bound=True, sort=False, mlabel=True, reserve=False),
             ]
@@ -114,9 +115,9 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
 
 async def run_scheduler(size=(21, 35), agent=10, task_per_agent=2):
     await asyncio.gather(
-        # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex"),
+        run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex"),
         # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="flex", window_size=20),
-        run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="edf"),
+        # run_task(size=size, agent=agent, task_per_agent=task_per_agent, scheduler="edf"),
     )
 
 
