@@ -1,7 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 
-name = "result-new-big"
+name = "result"
 project_root = os.path.dirname(os.path.dirname(__file__))
 experiment_dir = os.path.dirname(__file__)
 result_dir = os.path.join(project_root, name)
@@ -36,9 +36,10 @@ def parse(filename):
                 time_ms = line[6:-3]
             if "reserve" in line:
                 reserve += 1
+    success_rate = task_success / task_num
     # print(task_success, task_num, time_ms)
     return [size, agent, agent_per_task, seed, phi, scheduler, window, bound, sort, mlabel, skip,
-            task_bound, reserve_all, str(task_num), str(task_success), str(reserve), str(time_ms)]
+            task_bound, reserve_all, str(task_num), str(task_success), str(success_rate), str(reserve), str(time_ms)]
 
 
 def plot(phi, data):
@@ -61,7 +62,7 @@ def plot(phi, data):
 
 def main():
     header = ["size", "agent", "task_per_agent", "phi", "scheduler", "window", "bound", "sort", "mlabel", "skip",
-              "task_bound", "reserve_all", "task_num", "task_success", "reserve", "time_ms"]
+              "task_bound", "reserve_all", "task_num", "task_success", "success_rate", "reserve", "time_ms"]
 
     data = {}
     result_dict = {}
@@ -71,7 +72,7 @@ def main():
         if float(row[-1]) < 0:
             continue
         row_signature = ','.join(row[:3] + row[4:14])
-        row_data = row[-3:]
+        row_data = row[-4:]
         if row_signature not in data:
             data[row_signature] = []
         data[row_signature].append(row_data)
@@ -83,13 +84,13 @@ def main():
         temp = [0] * len(value[0])
         for x in value:
             for i in range(len(x)):
-                temp[i] += int(x[i]) / len(value)
+                temp[i] += float(x[i]) / len(value)
         data[key] = temp
 
     with open(os.path.join(experiment_dir, name + ".csv"), "w") as f:
         f.write(",".join(header) + "\n")
         for key, value in data.items():
-            f.write("%s,%f,%f,%f\n" % (key, value[0], value[1], value[2]))
+            f.write("%s,%f,%f,%f,%f\n" % (key, value[0], value[1], value[2], value[3]))
 
     exit(0)
 

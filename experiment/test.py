@@ -12,7 +12,7 @@ workers = 20
 
 TIMEOUT = 36000
 
-MAP = "large"
+MAP = "small"
 
 if MAP == "small":
     MAP_SIZE = (21, 35)
@@ -26,10 +26,11 @@ else:
     EXPERIMENT_TIMES = 10
 TASKS_PER_AGENT = [2, 5, 10]
 # TASKS_PER_AGENT = [10, 2, 5]
-PHIS = [-0.25, -0.1, 0, 0.1, 0.25]
+# PHIS = [-0.25, -0.1, 0, 0.1, 0.25]
 # PHIS_180 = [-0.25, -0.1, 0.25]
+PHIS = [0]
 
-EXPERIMENT_JOBS = EXPERIMENT_TIMES * len(AGENTS) * len(TASKS_PER_AGENT) * len(PHIS)
+EXPERIMENT_JOBS = EXPERIMENT_TIMES * len(AGENTS) * len(TASKS_PER_AGENT) * len(PHIS) * 2
 count = 0
 
 
@@ -105,7 +106,10 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
             tasks += [
                 # _run(bound=True, sort=True, mlabel=True, reserve=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True),
-                _run(bound=True, sort=True, mlabel=True, reserve=True, skip=False, task_bound=True),
+                # _run(bound=True, sort=True, mlabel=True, reserve=True, skip=True, task_bound=True),
+                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True),
+                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=False, task_bound=True),
+                # _run(bound=True, sort=True, mlabel=True, skip=False, task_bound=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True),
                 # _run(bound=False, sort=False, mlabel=True, reserve=False),
                 # _run(bound=True, sort=False, mlabel=True, reserve=False),
