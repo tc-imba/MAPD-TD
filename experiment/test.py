@@ -8,7 +8,7 @@ program = os.path.join(project_root, "cmake-build-release", "MAPF")
 data_root = os.path.join(project_root, "test-benchmark")
 result_dir = os.path.join(project_root, "result")
 os.makedirs(result_dir, exist_ok=True)
-workers = 20
+workers = 5
 
 TIMEOUT = 36000
 
@@ -26,9 +26,9 @@ else:
     EXPERIMENT_TIMES = 10
 TASKS_PER_AGENT = [2, 5, 10]
 # TASKS_PER_AGENT = [10, 2, 5]
-# PHIS = [-0.25, -0.1, 0, 0.1, 0.25]
+PHIS = [-0.25, -0.1, 0, 0.1, 0.25]
 # PHIS_180 = [-0.25, -0.1, 0.25]
-PHIS = [0]
+# PHIS = [0]
 
 EXPERIMENT_JOBS = EXPERIMENT_TIMES * len(AGENTS) * len(TASKS_PER_AGENT) * len(PHIS) * 2
 count = 0
@@ -69,7 +69,7 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex
         args.append("-skip")
         output_filename += "-skip"
     args += ["--output", os.path.join(result_dir, output_filename)]
-    # print(args)
+    print(' '.join(args))
 
     global workers, count
     while workers <= 0:
@@ -108,7 +108,9 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=True, skip=True, task_bound=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True),
-                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=False, task_bound=True),
+                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True),
+                _run(bound=True, sort=True, mlabel=True, reserve=True, skip=True, task_bound=True),
+                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=False, task_bound=True),
                 # _run(bound=True, sort=True, mlabel=True, skip=False, task_bound=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True),
                 # _run(bound=False, sort=False, mlabel=True, reserve=False),

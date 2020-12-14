@@ -18,7 +18,7 @@ def generate(x, y, agent, agent_per_task, seed, release=False):
         ]
         if release:
             args.append("--release")
-        print(args)
+        print(' '.join(args))
         subprocess.run(args, stderr=subprocess.PIPE)
 
 
