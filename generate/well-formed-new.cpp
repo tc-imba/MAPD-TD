@@ -101,7 +101,7 @@ int main(int argc, const char *argv[]) {
     release = optionParser.isSet("--release");
 
 
-    string dataPath = "test-benchmark-2";
+    string dataPath = "test-benchmark";
 
     size_t deliveryWidth = 10;
 //    size_t deliveryX = 8;

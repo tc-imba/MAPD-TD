@@ -37,8 +37,8 @@ def parse_branch_and_bound(df: pd.DataFrame):
 
 
 def parse_dummy_path(df: pd.DataFrame):
-    reserve_dynamic_df = df[df['reserve'] == False].set_index(['agent', 'task_per_agent'])
-    reserve_all_df = df[df['reserve'] == True].set_index(['agent', 'task_per_agent'])
+    reserve_dynamic_df = df[df['reserve_all'] == False].set_index(['agent', 'task_per_agent'])
+    reserve_all_df = df[df['reserve_all'] == True].set_index(['agent', 'task_per_agent'])
     new_df = reserve_dynamic_df.join(reserve_all_df, on=['agent', 'task_per_agent'], lsuffix='_dynamic', rsuffix='_all')
     return new_df
 
@@ -46,7 +46,7 @@ def parse_dummy_path(df: pd.DataFrame):
 # for each (agent, task_per_agent), draw phi as x, success rate as y
 def plot_phi_vs_success(df, agent, task_per_agent):
     cond = (df['agent'] == agent) & (df['task_per_agent'] == task_per_agent) & (df['time_ms'] >= 0) & \
-           (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['reserve'] == False)
+           (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['reserve_all'] == False)
     new_df = df[cond]
     map_size = parse_map_size(new_df)
     filename = 'SR-%s-M-%d-N-%d.png' % (map_size, agent, task_per_agent)
@@ -70,7 +70,7 @@ def plot_phi_vs_success(df, agent, task_per_agent):
 # for each (agent, task_per_agent), draw phi as x, success rate as y
 def plot_phi(df):
     cond = (df['time_ms'] >= 0) & \
-           (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['reserve'] == False)
+           (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['reserve_all'] == False)
     new_df = df[cond]
     map_size = parse_map_size(new_df)
     filename = 'SR-%s.png' % map_size
@@ -102,7 +102,7 @@ def plot_phi(df):
 def plot_tasks_vs_success(df, size, phi, k):
     df['ratio'] = df['task_success'] / df['task_num']
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['task_per_agent'] == k) & (df['time_ms'] >= 0) & \
-           (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['reserve'] == False)
+           (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['reserve_all'] == False)
     new_df = df[cond]
     map_size = parse_map_size(new_df)
     phi_str = str(phi)
@@ -127,7 +127,7 @@ def plot_tasks_vs_success(df, size, phi, k):
 
 def plot_branch_and_bound(df, size, phi):
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['time_ms'] >= 0) & \
-           (df['mlabel'] == True) & (df['reserve'] == False) & \
+           (df['mlabel'] == True) & (df['reserve_all'] == False) & \
            (df['scheduler'] == 'flex') & (df['window'] == 0)
     new_df = df[cond]
     map_size = parse_map_size(new_df)
@@ -154,13 +154,14 @@ def plot_branch_and_bound(df, size, phi):
     plt.savefig(os.path.join(plots_dir, filename))
     plt.close()
 
-    print(no_df[['agent', 'task_per_agent', 'task_num_sort', 'time_ms_no', 'time_ms_sort', 'ratio']])
+    print(no_df[['agent', 'task_per_agent', 'task_num_sort', 'time_ms_no', 'time_ms_sort', 'ratio']]
+          .sort_values(['agent', 'task_per_agent']))
 
 
 def plot_dummy_path(df, size, phi):
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['time_ms'] >= 0) & \
            (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & \
-           (df['scheduler'] == 'flex') & (df['window'] == 0)
+           (df['scheduler'] == 'flex') & (df['window'] == 0) & (df['skip'] == True) & (df['task_bound'] == True)
     new_df = df[cond]
     parse_dummy_path(new_df)
     map_size = parse_map_size(new_df)
@@ -188,20 +189,21 @@ def plot_dummy_path(df, size, phi):
     plt.savefig(os.path.join(plots_dir, filename))
     plt.close()
 
-    print(new_df[['agent', 'task_per_agent', 'task_num_all', 'time_ms_all', 'time_ms_dynamic', 'ratio']])
+    print(new_df[['agent', 'task_per_agent', 'task_num_all', 'time_ms_all', 'time_ms_dynamic', 'ratio']]
+          .sort_values(['agent', 'task_per_agent']))
 
 
-def calculate_average(df, reserve_all):
+def calculate_average(df, reserve_all, label):
     cond = (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & \
-           (df['scheduler'] == 'flex') & (df['window'] == 0) & (df['reserve_all'] == reserve_all) & \
+           (df['window'] == 0) & (df['reserve_all'] == reserve_all) & \
            (df['skip'] == True) & (df['task_bound'] == True)
-    new_df = df[cond].groupby(['phi'], as_index=False).mean()
-
+    new_df = df[cond].groupby(['phi', 'scheduler'], as_index=False).mean()
+    print('Average-%s' % label)
     print(new_df)
 
 
 def main():
-    small_filename = os.path.join(experiment_dir, "result.csv")
+    small_filename = os.path.join(experiment_dir, "result-new-small.csv")
     large_filename = os.path.join(experiment_dir, "result-new-big.csv")
     small_df = pd.read_csv(small_filename)
     small_df['success_rate'] = small_df['task_success'] / small_df['task_num']
@@ -209,32 +211,33 @@ def main():
     large_df['success_rate'] = large_df['task_success'] / large_df['task_num']
     all_df = pd.concat([small_df, large_df])
 
-    calculate_average(large_df, True)
-    calculate_average(small_df, False)
+    calculate_average(large_df, False, 'L')
+    calculate_average(small_df, False, 'S')
 
     # plot_phi(small_df)
     # plot_phi(large_df)
 
-    # pairs = all_df.groupby(['agent', 'task_per_agent']).first()
-    # for index, row in pairs.iterrows():
-    #     agent, task_per_agent = index
-    #     plot_phi_vs_success(all_df, agent, task_per_agent)
-    #
-    # pairs = all_df.groupby(['size', 'phi']).first()
-    # for index, row in pairs.iterrows():
-    #     size, phi = index
-    #     for k in [2, 5, 10]:
-    #         plot_tasks_vs_success(all_df, size, phi, k)
-    #
+    pairs = all_df.groupby(['agent', 'task_per_agent']).first()
+    for index, row in pairs.iterrows():
+        agent, task_per_agent = index
+        plot_phi_vs_success(all_df, agent, task_per_agent)
+
+    pairs = all_df.groupby(['size', 'phi']).first()
+    for index, row in pairs.iterrows():
+        size, phi = index
+        for k in [2, 5, 10]:
+            plot_tasks_vs_success(all_df, size, phi, k)
+
     # pairs = all_df.groupby(['size', 'phi']).first()
     # for index, row in pairs.iterrows():
     #     size, phi = index
     #     plot_dummy_path(all_df, size, phi)
-    #
-    # pairs = small_df.groupby(['size', 'phi']).first()
-    # for index, row in pairs.iterrows():
-    #     size, phi = index
-    #     plot_branch_and_bound(small_df, size, phi)
+
+    pairs = small_df.groupby(['size', 'phi']).first()
+    for index, row in pairs.iterrows():
+        size, phi = index
+        if phi == 0:
+            plot_branch_and_bound(small_df, size, phi)
 
     # print(pair)
     # agent = pair[['agent']]

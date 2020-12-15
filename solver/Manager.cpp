@@ -268,6 +268,11 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
             auto i = p.first;
             auto &agent = agents[i];
             if (!recalculate && !agent.flexibility[j].path.empty()) {
+                if (minBeta > 0 && agent.flexibility[j].path.back().leaveTime > deadline - minBeta) {
+//                    std::cerr << "fail " << i << " " << j << std::endl;
+                    agent.flexibility[j].beta = -1;
+                    agent.flexibility[j].path.clear();
+                }
                 double beta = agent.flexibility[j].beta;
                 if (beta >= 0) {
                     if (boundFlag) {
