@@ -16,12 +16,12 @@ MAP = "small"
 
 if MAP == "small":
     MAP_SIZE = (21, 35)
-    # AGENTS = [10, 20, 30, 40, 50]
-    AGENTS = [30, 40, 50]
+    AGENTS = [10, 20, 30, 40, 50]
+    # AGENTS = [30, 40, 50]
     EXPERIMENT_TIMES = 10
 else:
     MAP_SIZE = (33, 46)
-    # AGENTS = [60, 90, 120, 150]
+    # AGENTS = [60]
     AGENTS = [60, 90, 120, 150, 180]
     # AGENTS = [180]
     EXPERIMENT_TIMES = 10
@@ -29,9 +29,9 @@ TASKS_PER_AGENT = [10]
 # TASKS_PER_AGENT = [2, 5, 10]
 # PHIS = [-0.25, -0.1, 0, 0.1, 0.25]
 # PHIS_180 = [-0.25, -0.1, 0.25]
-PHIS = [0]
+PHIS = [0, 0.1, 0.25]
 
-EXPERIMENT_JOBS = EXPERIMENT_TIMES * len(AGENTS) * len(TASKS_PER_AGENT) * len(PHIS)
+EXPERIMENT_JOBS = EXPERIMENT_TIMES * len(AGENTS) * len(TASKS_PER_AGENT) * len(PHIS) * 2
 count = 0
 
 
@@ -105,11 +105,11 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
             _run = functools.partial(run, size=size, agent=agent, task_per_agent=task_per_agent, seed=seed,
                                      scheduler=scheduler, window_size=window_size, phi=phi)
             tasks += [
-                _run(bound=False, sort=False, mlabel=True, reserve=False, skip=False, task_bound=False),
+                # _run(bound=False, sort=False, mlabel=True, reserve=False, skip=False, task_bound=False),
                 # _run(bound=True, sort=True, mlabel=True, reserve=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True),
-                # _run(bound=True, sort=True, mlabel=True, reserve=True, skip=True, task_bound=True),
-                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True),
+                _run(bound=True, sort=True, mlabel=True, reserve=True, skip=True, task_bound=True),
+                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True),
                 # _run(bound=False, sort=False, mlabel=True, reserve=False, skip=False, task_bound=False),
                 # _run(bound=True, sort=True, mlabel=True, reserve=True, skip=True, task_bound=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=False, task_bound=True),

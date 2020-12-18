@@ -61,14 +61,22 @@ def plot(phi, data):
 
 
 def main():
-    header = ["size", "agent", "task_per_agent", "phi", "scheduler", "window", "bound", "sort", "mlabel", "skip",
+    header = ["size", "agent", "task_per_agent", "seed", "phi", "scheduler", "window", "bound", "sort", "mlabel", "skip",
               "task_bound", "reserve_all", "task_num", "task_success", "success_rate", "reserve", "time_ms"]
 
     data = {}
     result_dict = {}
 
+    with open(os.path.join(experiment_dir, name + ".csv"), "w") as f:
+        f.write(",".join(header) + "\n")
+        for filename in sorted(os.listdir(result_dir)):
+            row = parse(filename)
+            f.write("%s\n" % ','.join(row))
+    exit(0)
+
     for filename in sorted(os.listdir(result_dir)):
         row = parse(filename)
+        # print(row)
         if float(row[-1]) < 0:
             continue
         row_signature = ','.join(row[:3] + row[4:14])

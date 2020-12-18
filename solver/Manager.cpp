@@ -932,7 +932,17 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
         agent.flexibility.resize(tasks.size());
         size_t prevIndex = 0;
 
-        map->removeNodeOccupied(agent.currentPos, agent.lastTimeStamp, agent.lastTimeStamp + 1);
+        size_t infiniteWaiting = 0;
+
+        if (skipFlag) {
+            if (agent.reservedPath.empty()) {
+                map->removeNodeOccupied(agent.currentPos, agent.lastTimeStamp, agent.lastTimeStamp + 1);
+            }
+            infiniteWaiting = map->removeInfiniteWaiting(agent.originPos);
+            if (!agent.reservedPath.empty()) {
+                removeAgentPathConstraints(map, agent, agent.reservedPath);
+            }
+        }
 
         for (size_t j = 0; j < tasks.size(); j++) {
             auto &task = tasks[j];
@@ -957,8 +967,15 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
             sortAgents[j][i] = std::make_pair(i, beta);
         }
 
-        map->addNodeOccupied(agent.currentPos, agent.lastTimeStamp, agent.lastTimeStamp + 1);
-
+        if (skipFlag) {
+            if (!agent.reservedPath.empty()) {
+                addAgentPathConstraints(map, agent, agent.reservedPath);
+            }
+            map->addInfiniteWaiting(agent.originPos, infiniteWaiting);
+            if (agent.reservedPath.empty()) {
+                map->addNodeOccupied(agent.currentPos, agent.lastTimeStamp, agent.lastTimeStamp + 1);
+            }
+        }
     }
 
     Count count;
