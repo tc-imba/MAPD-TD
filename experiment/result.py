@@ -2,6 +2,9 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import math
+import sys
+from to_precision import std_notation, sci_notation
 
 project_root = os.path.dirname(os.path.dirname(__file__))
 experiment_dir = os.path.dirname(__file__)
@@ -9,15 +12,20 @@ plots_dir = os.path.join(experiment_dir, "plots")
 os.makedirs(plots_dir, exist_ok=True)
 
 pd.set_option("display.max_rows", None, "display.max_columns", None, 'display.width', None)
+round_to_n = lambda x, n: x if x == 0 else round(x, -int(math.floor(math.log10(abs(x)))) + (n - 1))
+
+
+def _parse_map_size(size):
+    if size == '21x35':
+        return 'S'
+    else:
+        return 'L'
 
 
 def parse_map_size(df: pd.DataFrame):
     arr = df['size'].unique()
     assert len(arr) == 1
-    if arr[0] == '21x35':
-        return 'S'
-    else:
-        return 'L'
+    return _parse_map_size(arr[0])
 
 
 def parse_methods(df: pd.DataFrame):
@@ -102,7 +110,8 @@ def plot_phi(df):
 def plot_tasks_vs_success(df, size, phi, k):
     df['ratio'] = df['task_success'] / df['task_num']
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['task_per_agent'] == k) & (df['time_ms'] >= 0) & \
-           (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['reserve_all'] == False)
+           (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['reserve_all'] == False) & \
+           (df['scheduler'] == 'flex')
     new_df = df[cond]
     map_size = parse_map_size(new_df)
     phi_str = str(phi)
@@ -123,7 +132,20 @@ def plot_tasks_vs_success(df, size, phi, k):
     plt.savefig(os.path.join(plots_dir, filename))
     plt.close()
 
-    print(new_df[['agent', 'task_per_agent', 'scheduler', 'window', 'task_num', 'task_success', 'ratio', 'time_ms']])
+    print_df = new_df[['agent', 'task_per_agent', 'scheduler', 'window', 'task_num',
+                       'task_success', 'ratio', 'time_ms']] \
+        .sort_values(['agent', 'task_per_agent'])
+
+    ratios = []
+    times = []
+    for index, row in print_df.iterrows():
+        ratios.append(std_notation(row['ratio'], 4))
+        times.append(std_notation(row['time_ms'] / 1000, 4))
+
+    ratio_str = '$%d \\times M$ & %s \\\\ \\hline %% phi=%s' % (k, ' & '.join(ratios), phi)
+    time_str = '$%d \\times M$ & %s \\\\ \\hline %% phi=%s' % (k, ' & '.join(times), phi)
+    return ratio_str, time_str
+
 
 def plot_branch_and_bound(df, size, phi):
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['time_ms'] >= 0) & \
@@ -154,8 +176,17 @@ def plot_branch_and_bound(df, size, phi):
     plt.savefig(os.path.join(plots_dir, filename))
     plt.close()
 
-    print(no_df[['agent', 'task_per_agent', 'task_num_sort', 'time_ms_no', 'time_ms_sort', 'ratio']]
-          .sort_values(['agent', 'task_per_agent']))
+    print_df = no_df[['agent', 'task_per_agent', 'task_num_sort', 'time_ms_no', 'time_ms_sort', 'ratio']] \
+        .sort_values(['agent', 'task_per_agent'])
+
+    ratio_str = []
+    for task_per_agent, group in print_df.groupby('task_per_agent'):
+        ratios = []
+        for index, row in group.iterrows():
+            ratios.append(std_notation(row['ratio'], 4))
+        ratio_str.append('$%d \\times M$ & %s \\\\ \\hline %% phi=%s' % (task_per_agent, ' & '.join(ratios), phi))
+
+    return ratio_str
 
 
 def plot_dummy_path(df, size, phi):
@@ -173,6 +204,7 @@ def plot_dummy_path(df, size, phi):
     new_df = parse_dummy_path(new_df)
     new_df.reset_index(level=new_df.index.names, inplace=True)
     new_df['ratio'] = new_df['time_ms_all'] / new_df['time_ms_dynamic']
+    new_df['reserve_ratio'] = new_df['reserve_dynamic'] / new_df['task_success_dynamic']
 
     plt.figure()
     plt.plot(new_df['task_num_dynamic'], new_df['task_num_dynamic'] * 0 + 1, label="dynamic reserve (baseline) ",
@@ -189,8 +221,25 @@ def plot_dummy_path(df, size, phi):
     plt.savefig(os.path.join(plots_dir, filename))
     plt.close()
 
-    print(new_df[['agent', 'task_per_agent', 'task_num_all', 'time_ms_all', 'time_ms_dynamic', 'ratio']]
-          .sort_values(['agent', 'task_per_agent']))
+    print_df = new_df[['agent', 'task_per_agent', 'task_num_all', 'time_ms_all', 'time_ms_dynamic', 'ratio',
+                       'reserve_dynamic', 'task_success_dynamic', 'reserve_ratio']] \
+        .sort_values(['agent', 'task_per_agent'])
+    ratio_str = []
+    reserve_ratio_str = []
+    for task_per_agent, group in print_df.groupby('task_per_agent'):
+        ratios = []
+        reserve_ratios = []
+        for index, row in group.iterrows():
+            ratios.append(std_notation(row['ratio'], 4))
+            reserve_ratios.append(std_notation(row['reserve_ratio'], 4))
+        ratio_str.append('$%d \\times M$ & %s \\\\ \\hline %% phi=%s' % (task_per_agent, ' & '.join(ratios), phi))
+        reserve_ratio_str.append(
+            '$%d \\times M$ & %s \\\\ \\hline %% phi=%s' % (task_per_agent, ' & '.join(reserve_ratios), phi))
+
+    return ratio_str, reserve_ratio_str
+
+    # print(new_df[['agent', 'task_per_agent', 'task_num_all', 'time_ms_all', 'time_ms_dynamic', 'ratio']]
+    #       .sort_values(['agent', 'task_per_agent']))
 
 
 def calculate_average(df, reserve_all, label):
@@ -202,6 +251,18 @@ def calculate_average(df, reserve_all, label):
     print(new_df)
 
 
+def generate_table(data, size):
+    assert len(data) > 0
+    print()
+    for i in range(2, len(data[0])):
+        table = []
+        for row in data:
+            if row[0] == size:
+                table.append('\n'.join(row[i]))
+        print('\n'.join(table))
+        print()
+
+
 def main():
     small_filename = os.path.join(experiment_dir, "result-new-small.csv")
     large_filename = os.path.join(experiment_dir, "result-new-big.csv")
@@ -211,33 +272,51 @@ def main():
     large_df['success_rate'] = large_df['task_success'] / large_df['task_num']
     all_df = pd.concat([small_df, large_df])
 
-    calculate_average(large_df, False, 'L')
-    calculate_average(small_df, False, 'S')
+    # calculate_average(large_df, False, 'L')
+    # calculate_average(small_df, False, 'S')
 
     # plot_phi(small_df)
     # plot_phi(large_df)
 
-    pairs = all_df.groupby(['agent', 'task_per_agent']).first()
-    for index, row in pairs.iterrows():
-        agent, task_per_agent = index
-        plot_phi_vs_success(all_df, agent, task_per_agent)
-
-    pairs = all_df.groupby(['size', 'phi']).first()
-    for index, row in pairs.iterrows():
-        size, phi = index
-        for k in [2, 5, 10]:
-            plot_tasks_vs_success(all_df, size, phi, k)
-
+    # pairs = all_df.groupby(['agent', 'task_per_agent']).first()
+    # for index, row in pairs.iterrows():
+    #     agent, task_per_agent = index
+    #     plot_phi_vs_success(all_df, agent, task_per_agent)
+    #
     # pairs = all_df.groupby(['size', 'phi']).first()
+    # data = []
     # for index, row in pairs.iterrows():
     #     size, phi = index
-    #     plot_dummy_path(all_df, size, phi)
+    #     if phi >= 0:
+    #         ratios = []
+    #         times = []
+    #         for k in [2, 5, 10]:
+    #             ratio, time = plot_tasks_vs_success(all_df, size, phi, k)
+    #             ratios.append(ratio)
+    #             times.append(time)
+    #         data.append((_parse_map_size(size), phi, ratios, times))
+    #
+    # generate_table(data, 'S')
+    # generate_table(data, 'L')
+
+    # pairs = all_df.groupby(['size', 'phi']).first()
+    # data = []
+    # for index, row in pairs.iterrows():
+    #     size, phi = index
+    #     if phi >= 0:
+    #         ratios, reserve_ratios = plot_dummy_path(all_df, size, phi)
+    #         data.append((_parse_map_size(size), phi, ratios, reserve_ratios))
+    # generate_table(data, 'S')
+    # generate_table(data, 'L')
 
     pairs = small_df.groupby(['size', 'phi']).first()
+    data = []
     for index, row in pairs.iterrows():
         size, phi = index
-        if phi == 0:
-            plot_branch_and_bound(small_df, size, phi)
+        if phi >= 0:
+            ratios = plot_branch_and_bound(small_df, size, phi)
+            data.append((_parse_map_size(size), phi, ratios))
+    generate_table(data, 'S')
 
     # print(pair)
     # agent = pair[['agent']]
