@@ -56,6 +56,30 @@ void Map::calculateDistances() {
     }
 }
 
+
+void Map::readDistances(const std::string &filename, std::vector<std::vector<size_t>> &result) {
+    size_t size = width * height;
+    std::istringstream iss;
+    std::ifstream fin;
+    std::string line;
+
+    result.resize(size, std::vector<size_t>(size, std::numeric_limits<size_t>::max() / 2));
+    fin.open(filename);
+    if (!fin.is_open()) {
+        throw std::runtime_error("map distance file not found: " + filename);
+    }
+    while (std::getline(fin, line)) {
+        if (line.empty()) continue;
+        iss.clear();
+        iss.str(line);
+        size_t x1, y1, x2, y2, distance;
+        iss >> x1 >> y1 >> x2 >> y2 >> distance;
+        result[x1 * width + y1][x2 * width + y2] = distance;
+    }
+    fin.close();
+    std::cerr << "Map " << filename << " distances imported" << std::endl;
+}
+
 Map::Map(const std::string &filename) {
     std::ifstream fin(filename);
     if (!fin.is_open()) {
@@ -100,23 +124,8 @@ Map::Map(const std::string &filename) {
     fin.close();
     std::cerr << "Map " << filename << " imported" << std::endl;
 
-    size_t size = width * height;
-    distances.resize(size, std::vector<size_t>(size, std::numeric_limits<size_t>::max() / 2));
-    fin.open(filename + ".distance");
-    if (!fin.is_open()) {
-        throw std::runtime_error("map distance file not found");
-    }
-    std::istringstream iss;
-    while (std::getline(fin, line)) {
-        if (line.empty()) continue;
-        iss.clear();
-        iss.str(line);
-        size_t x1, y1, x2, y2, distance;
-        iss >> x1 >> y1 >> x2 >> y2 >> distance;
-        distances[x1 * width + y1][x2 * width + y2] = distance;
-    }
-    fin.close();
-    std::cerr << "Map " << filename << " distances imported" << std::endl;
+    readDistances(filename + ".distance", distances);
+    readDistances(filename + ".endpoint.distance", distancesEndpoint);
 }
 
 const std::vector<char> &Map::operator[](size_t index) const {
@@ -409,7 +418,14 @@ size_t Map::getGraphDistance(std::pair<size_t, size_t> start, std::pair<size_t, 
     return distances[a][b];
 }
 
+size_t Map::getGraphDistanceEndpoint(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end) {
+    size_t a = start.first * width + start.second;
+    size_t b = end.first * width + end.second;
+    return distancesEndpoint[a][b];
+}
+
 size_t Map::getExtraCost(std::pair<size_t, size_t> pos) {
     if (map[pos.first][pos.second] == 't') return 1;
     return 0;
 }
+

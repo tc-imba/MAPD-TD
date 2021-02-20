@@ -325,8 +325,9 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
             }
         }
 
-        size_t agentMinTime = map->getGraphDistance(agent.currentPos, task->scenario.getStart()) +
-                              map->getGraphDistance(task->scenario.getStart(), task->scenario.getEnd());
+        // algorithm 2 line 6 (d*)
+        size_t agentMinTime = map->getGraphDistanceEndpoint(agent.currentPos, task->scenario.getStart()) +
+                              map->getGraphDistanceEndpoint(task->scenario.getStart(), task->scenario.getEnd());
         if (skipAllFlag || agent.lastTimeStamp + agentMinTime > upperBound) {
             auto beta = p.second;
             if (beta < 0) beta = -1;
@@ -787,9 +788,10 @@ void Manager::selectTask(Solver &solver, int x, double phi) {
                 if (agents[i].flexibility[selectedTask].beta >= 0) {
                     beta = agents[i].flexibility[selectedTask].beta;
                 } else {
-                    // here we use the manhattan distance to sort for beta < 0
-                    beta -= std::abs((double) agents[i].currentPos.first - task->scenario.getStart().first);
-                    beta -= std::abs((double) agents[i].currentPos.second - task->scenario.getStart().second);
+                    // here we use the graph distance to sort for beta < 0
+                    beta -= map->getGraphDistance(agents[i].currentPos, task->scenario.getStart());
+//                    beta -= std::abs((double) agents[i].currentPos.first - task->scenario.getStart().first);
+//                    beta -= std::abs((double) agents[i].currentPos.second - task->scenario.getStart().second);
                 }
                 tempAgents[i] = std::make_pair(i, beta);
             }
@@ -960,9 +962,10 @@ void Manager::computeFlex(Solver &solver, int x, double phi) {
                     agent.flexibility[j] = prevFlexibility[prevIndex];
                 }
             } else {
-                // here we use the manhattan distance to sort for beta < 0
-                beta -= std::abs((double) agent.currentPos.first - task->scenario.getStart().first);
-                beta -= std::abs((double) agent.currentPos.second - task->scenario.getStart().second);
+                // here we use the graph distance to sort for beta < 0
+                beta -= map->getGraphDistance(agent.currentPos, task->scenario.getStart());
+//                beta -= std::abs((double) agent.currentPos.first - task->scenario.getStart().first);
+//                beta -= std::abs((double) agent.currentPos.second - task->scenario.getStart().second);
             }
             sortAgents[j][i] = std::make_pair(i, beta);
         }

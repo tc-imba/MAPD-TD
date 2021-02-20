@@ -54,6 +54,7 @@ private:
     std::string type;
     std::vector<std::vector<char> > map;
     std::vector<std::vector<size_t> > distances;
+    std::vector<std::vector<size_t> > distancesEndpoint;
 
     std::unordered_map<OccupiedKey, std::unique_ptr<OccupiedValue>, OccupiedKeyHash, OccupiedKeyEqual> occupiedMap;
 
@@ -62,6 +63,8 @@ private:
     static void parseHeader(const std::string &line, const std::string &key, T &value);
 
     void calculateDistances();
+
+    void readDistances(const std::string &filename, std::vector<std::vector<size_t> > &distances);
 
 public:
     explicit Map(const std::string &filename);
@@ -105,6 +108,8 @@ public:
     static size_t getDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
 
     size_t getGraphDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
+
+    size_t getGraphDistanceEndpoint(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
 
     size_t getExtraCost(std::pair<size_t, size_t> pos);
 };
