@@ -24,15 +24,15 @@ def generate(x, y, agent, agent_per_task, seed, release=False):
 
 def main():
     os.chdir(project_root)
-    # for m in [10, 20, 30, 40, 50]:
-    #     for k in [2, 5, 10]:
-    #         generate(5, 2, m, k, True)
-    #         generate(5, 2, m, k, False)
-    # for m in [60, 90, 120, 150, 180]:
-    #     for k in [2, 5, 10]:
-    #         generate(8, 3, m, k, True)
-    #         generate(8, 3, m, k, False)
-    generate(8, 3, 60, 10, False)
+    for m in [10, 20, 30, 40, 50]:
+        for k in [2, 5, 10]:
+            generate(5, 2, m, k, True)
+            generate(5, 2, m, k, False)
+    for m in [60, 90, 120, 150, 180]:
+        for k in [2, 5, 10]:
+            generate(8, 3, m, k, True)
+            generate(8, 3, m, k, False)
+    # generate(8, 3, 60, 10, False)
 
 if __name__ == '__main__':
     main()

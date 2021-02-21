@@ -53,7 +53,7 @@ int main(int argc, const char *argv[]) {
 
 //    int height = 33, width = 46;
 //    int height = 21, width = 35;
-    std::string dataPath = "test-benchmark-2";
+    std::string dataPath = "test-benchmark";
     std::string mapName = "well-formed-" + std::to_string(height) + "-" + std::to_string(width) + ".map";
 
     std::ifstream fin(dataPath + "/map/" + mapName);
