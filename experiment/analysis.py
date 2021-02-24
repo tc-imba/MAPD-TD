@@ -22,6 +22,7 @@ def parse(filename):
     reserve_all = str("reserve" in args)
     skip = str("skip" in args)
     task_bound = str("tb" in args)
+    recalc = str("recalc" in args)
     # print(size, agent, agent_per_task, phi, scheduler, bound, sort, mlabel)
 
     task_num = int(agent) * int(agent_per_task)
@@ -38,7 +39,7 @@ def parse(filename):
                 reserve += 1
     success_rate = task_success / task_num
     # print(task_success, task_num, time_ms)
-    return [size, agent, agent_per_task, seed, phi, scheduler, window, bound, sort, mlabel, skip,
+    return [size, agent, agent_per_task, seed, phi, scheduler, window, bound, sort, mlabel, skip, recalc,
             task_bound, reserve_all, str(task_num), str(task_success), str(success_rate), str(reserve), str(time_ms)]
 
 
@@ -61,7 +62,7 @@ def plot(phi, data):
 
 
 def main():
-    header = ["size", "agent", "task_per_agent", "seed", "phi", "scheduler", "window", "bound", "sort", "mlabel", "skip",
+    header = ["size", "agent", "task_per_agent", "seed", "phi", "scheduler", "window", "bound", "sort", "mlabel", "skip", "recalc",
               "task_bound", "reserve_all", "task_num", "task_success", "success_rate", "reserve", "time_ms"]
 
     data = {}
@@ -79,7 +80,7 @@ def main():
         # print(row)
         if float(row[-1]) < 0:
             continue
-        row_signature = ','.join(row[:3] + row[4:14])
+        row_signature = ','.join(row[:3] + row[4:15])
         row_data = row[-4:]
         if row_signature not in data:
             data[row_signature] = []
