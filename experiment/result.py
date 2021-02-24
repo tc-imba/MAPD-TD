@@ -366,16 +366,16 @@ def main():
     generate_table(data, 'S')
     generate_table(data, 'L')
 
-    pairs = all_df.groupby(['size', 'phi']).first()
-    data = []
-    for index, row in pairs.iterrows():
-        size, phi = index
-        if phi >= 0:
-            success_ratios = plot_recalculate(all_df, size, phi)
-            data.append((_parse_map_size(size), phi, success_ratios))
-
-    generate_table(data, 'S')
-    generate_table(data, 'L')
+    # pairs = all_df.groupby(['size', 'phi']).first()
+    # data = []
+    # for index, row in pairs.iterrows():
+    #     size, phi = index
+    #     if phi >= 0:
+    #         success_ratios = plot_recalculate(all_df, size, phi)
+    #         data.append((_parse_map_size(size), phi, success_ratios))
+    #
+    # generate_table(data, 'S')
+    # generate_table(data, 'L')
 
     pairs = all_df.groupby(['size', 'phi']).first()
     data = []
