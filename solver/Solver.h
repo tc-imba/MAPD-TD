@@ -75,13 +75,13 @@ private:
     bool extraCostFlag;
 
 public:
-    bool isOccupied(boost::icl::interval_set<size_t> *occupied, boost::icl::discrete_interval<size_t> interval);
+    static bool isOccupied(boost::icl::interval_set<size_t> *occupied, boost::icl::discrete_interval<size_t> interval);
 
     // isOccupied in [startTime, endTime)
-    bool isOccupied(boost::icl::interval_set<size_t> *occupied, size_t startTime, size_t endTime);
+    static bool isOccupied(boost::icl::interval_set<size_t> *occupied, size_t startTime, size_t endTime);
 
     // isOccupied in [startTime, timeStart + 1)
-    bool isOccupied(boost::icl::interval_set<size_t> *occupied, size_t timeStart);
+    static bool isOccupied(boost::icl::interval_set<size_t> *occupied, size_t timeStart);
 
     std::pair<size_t, size_t>
     findNotOccupiedInterval(boost::icl::interval_set<size_t> *occupied, size_t startTime, size_t endTime);
@@ -150,6 +150,9 @@ public:
     auto &getOpen() const { return this->open; };
 
     auto &getClosed() const { return this->closed; };
+
+    std::pair<size_t, size_t> getNearestParkingLocation(std::pair<size_t, size_t> pos);
+
 };
 
 

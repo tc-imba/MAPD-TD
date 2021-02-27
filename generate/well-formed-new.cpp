@@ -47,6 +47,14 @@ string generateMap(const string &dataPath, size_t deliveryWidth, size_t delivery
         }
     }
 
+    vector<size_t> parkingY = {1, 2, 4, 5, maxY - 6, maxY - 5, maxY - 3, maxY - 2};
+    for (size_t i = 1; i < maxX - 1; i++) {
+        for (size_t j : parkingY) {
+//            cout << i << " " << j << endl;
+            map[i][j] = 'p';
+        }
+    }
+
     for (auto &row : map) {
         fout << row << endl;
     }
@@ -80,6 +88,8 @@ int main(int argc, const char *argv[]) {
     optionParser.example = "./MAPF-generate-well-formed";
     optionParser.footer = "";
 
+    optionParser.add("test-benchmark", false, 1, 0, "Data Path", "-d", "--data");
+
     optionParser.add("5489", false, 1, 0, "Random Seed", "-s", "--seed");
     optionParser.add("10", false, 1, 0, "Agent Number", "-a", "--agent");
     optionParser.add("2", false, 1, 0, "Task Number Per Agent", "-k", "--agent-per-task");
@@ -90,18 +100,17 @@ int main(int argc, const char *argv[]) {
 
     optionParser.parse(argc, argv);
 
+    std::string dataPath;
     unsigned long agentNum, k, deliveryX, deliveryY, seed;
     bool release;
 
+    optionParser.get("--data")->getString(dataPath);
     optionParser.get("--seed")->getULong(seed);
     optionParser.get("--agent")->getULong(agentNum);
     optionParser.get("--agent-per-task")->getULong(k);
     optionParser.get("-x")->getULong(deliveryX);
     optionParser.get("-y")->getULong(deliveryY);
     release = optionParser.isSet("--release");
-
-
-    string dataPath = "test-benchmark";
 
     size_t deliveryWidth = 10;
 //    size_t deliveryX = 8;

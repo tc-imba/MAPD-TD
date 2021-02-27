@@ -14,7 +14,8 @@ std::string generateOutputFileName(const std::string &scheduler, int algorithmId
                                    bool boundFlag, bool sortFlag, bool multiLabelFlag,
                                    bool deadlineBoundFlag, bool taskBoundFlag,
                                    bool recalculateFlag, bool reserveAllFlag,
-                                   bool skipFlag, bool extraCostFlag) {
+                                   bool skipFlag, bool extraCostFlag,
+                                   bool reserveNearestFlag) {
     std::ostringstream oss;
     oss << scheduler << "-algo-" << algorithmId;
     if (boundFlag) {
@@ -43,6 +44,9 @@ std::string generateOutputFileName(const std::string &scheduler, int algorithmId
     }
     if (extraCostFlag) {
         oss << "-ec";
+    }
+    if (reserveNearestFlag) {
+        oss << "-nearest";
     }
     oss << ".txt";
     return oss.str();
@@ -85,6 +89,7 @@ int main(int argc, const char *argv[]) {
     optionParser.add("", false, 0, 0, "Reserve all", "-ra", "--reserve-all");
     optionParser.add("", false, 0, 0, "Skip no conflict", "-skip", "--skip-no-conflict");
     optionParser.add("", false, 0, 0, "Extra Cost", "-ec", "--extra-cost");
+    optionParser.add("", false, 0, 0, "Extra Cost", "-rn", "--reserve-nearest");
     optionParser.parse(argc, argv);
 
     if (optionParser.isSet("-h")) {
@@ -98,7 +103,7 @@ int main(int argc, const char *argv[]) {
     double phi;
     int algorithmId;
     bool boundFlag, sortFlag, multiLabelFlag, deadlineBoundFlag,
-            taskBoundFlag, recalculateFlag, reserveAllFlag, skipFlag, extraCostFlag;
+            taskBoundFlag, recalculateFlag, reserveAllFlag, skipFlag, extraCostFlag, reserveNearestFlag;
     unsigned long long maxStep, windowSize;
 
     optionParser.get("--data")->getString(dataPath);
@@ -118,6 +123,7 @@ int main(int argc, const char *argv[]) {
     reserveAllFlag = optionParser.isSet("--reserve-all");
     skipFlag = optionParser.isSet("--skip-no-conflict");
     extraCostFlag = optionParser.isSet("--extra-cost");
+    reserveNearestFlag = optionParser.isSet("--reserve-nearest");
 
     auto coutBuf = std::cout.rdbuf();
     std::ofstream fout;
@@ -125,7 +131,7 @@ int main(int argc, const char *argv[]) {
         if (outputFile == "auto") {
             outputFile = generateOutputFileName(scheduler, algorithmId, boundFlag, sortFlag, multiLabelFlag,
                                                 deadlineBoundFlag, taskBoundFlag, recalculateFlag, reserveAllFlag,
-                                                skipFlag, extraCostFlag);
+                                                skipFlag, extraCostFlag, reserveNearestFlag);
         }
         fout.open(outputFile);
         std::cout.rdbuf(fout.rdbuf());
@@ -137,7 +143,8 @@ int main(int argc, const char *argv[]) {
             boundFlag, sortFlag, multiLabelFlag, true,
             deadlineBoundFlag, taskBoundFlag,
             recalculateFlag, reserveAllFlag,
-            skipFlag, extraCostFlag
+            skipFlag, extraCostFlag,
+            reserveNearestFlag
     );
     auto map = manager.loadTaskFile(taskFile);
 

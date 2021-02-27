@@ -3,6 +3,7 @@
 //
 
 #include "Map.h"
+#include "Solver.h"
 
 #include <fstream>
 #include <sstream>
@@ -119,6 +120,9 @@ Map::Map(const std::string &filename) {
         }
         for (size_t j = 0; j < this->width; j++) {
             this->map[i][j] = line[j];
+            if (this->map[i][j] == 'p') {
+                parkingLocations.emplace_back(i, j);
+            }
         }
     }
     fin.close();

@@ -43,17 +43,17 @@ public:
     };
 
     struct Agent {
-        std::pair<size_t, size_t> originPos, currentPos;
+        std::pair<size_t, size_t> originPos, currentPos, reservePos;
         std::vector<std::unique_ptr<Task> > tasks;
         size_t lastTimeStamp = 0;
         std::vector<PathNode> path;
         std::vector<PathNode> reservedPath;
         std::vector<Flexibility> flexibility;
 
-        explicit Agent(std::pair<size_t, size_t> pos) : originPos(pos), currentPos(pos) {}
+        explicit Agent(std::pair<size_t, size_t> pos) : originPos(pos), currentPos(pos), reservePos(pos) {}
 
         Agent(const Agent &that) :
-                originPos(that.originPos), currentPos(that.currentPos),
+                originPos(that.originPos), currentPos(that.currentPos), reservePos(that.reservePos),
                 lastTimeStamp(that.lastTimeStamp), reservedPath(that.reservedPath) {}
     };
 
@@ -88,6 +88,7 @@ private:
     bool reserveAllFlag;
     bool skipFlag;
     bool extraCostFlag;
+    bool reserveNearestFlag;
 
     void applyReservedPath();
 
@@ -104,9 +105,7 @@ private:
     void removeAgentPathConstraints(Map *map, Agent &agent, const std::vector<PathNode> &vector);
 
     Map *loadMapFile(const std::string &filename);
-
-    std::pair<size_t, size_t> computeReservedPath(Solver &solver, size_t i, std::vector<PathNode> &path);
-
+    
     bool reservePath(Solver &solver, size_t i);
 
     std::pair<size_t, size_t> computePath(Solver &solver, std::vector<PathNode> &path, Scenario *task,
@@ -123,7 +122,8 @@ public:
                      bool multiLabelFlag = true, bool occupiedFlag = true,
                      bool deadlineBoundFlag = true, bool taskBoundFlag = true,
                      bool recalculateFlag = true, bool reserveAllFlag = true,
-                     bool skipFlag = false, bool extraCostFlag = false);
+                     bool skipFlag = false, bool extraCostFlag = false,
+                     bool reserveNearestFlag = false);
 
     Map *getMap(const std::string &mapName);
 

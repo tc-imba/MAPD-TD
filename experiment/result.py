@@ -276,7 +276,7 @@ def plot_recalculate(df, size, phi):
     new_df = parse_recalculate(new_df)
     new_df.reset_index(level=new_df.index.names, inplace=True)
     # new_df['ratio'] = new_df['time_ms_all'] / new_df['time_ms_dynamic']
-    new_df['success_ratio'] = new_df['task_success_on'] / new_df['task_success_off']
+    new_df['success_ratio'] = new_df['task_success_off'] / new_df['task_num_on']
 
     new_df = new_df.groupby(['agent', 'task_per_agent'], as_index=False).mean()
 
@@ -340,40 +340,29 @@ def main():
     #     agent, task_per_agent = index
     #     plot_phi_vs_success(all_df, agent, task_per_agent)
 
-    pairs = all_df.groupby(['size', 'phi']).first()
-    data = []
-    for index, row in pairs.iterrows():
-        size, phi = index
-        if phi >= 0:
-            ratios = []
-            times = []
-            for k in [10]:
-                ratio, time = plot_tasks_vs_success(all_df, size, phi, k)
-                ratios.append(ratio)
-                times.append(time)
-                data.append((_parse_map_size(size), phi, ratios, times))
-    #
-    generate_table(data, 'S')
-    generate_table(data, 'L')
-
-    pairs = all_df.groupby(['size', 'phi']).first()
-    data = []
-    for index, row in pairs.iterrows():
-        size, phi = index
-        if phi >= 0:
-            ratios, reserve_ratios = plot_dummy_path(all_df, size, phi)
-            data.append((_parse_map_size(size), phi, ratios, reserve_ratios))
-    generate_table(data, 'S')
-    generate_table(data, 'L')
+    # pairs = all_df.groupby(['size', 'phi']).first()
+    # data = []
+    # for index, row in pairs.iterrows():
+    #     size, phi = index
+    #     if phi >= 0:
+    #         ratios = []
+    #         times = []
+    #         for k in [10]:
+    #             ratio, time = plot_tasks_vs_success(all_df, size, phi, k)
+    #             ratios.append(ratio)
+    #             times.append(time)
+    #             data.append((_parse_map_size(size), phi, ratios, times))
+    # #
+    # generate_table(data, 'S')
+    # generate_table(data, 'L')
 
     # pairs = all_df.groupby(['size', 'phi']).first()
     # data = []
     # for index, row in pairs.iterrows():
     #     size, phi = index
     #     if phi >= 0:
-    #         success_ratios = plot_recalculate(all_df, size, phi)
-    #         data.append((_parse_map_size(size), phi, success_ratios))
-    #
+    #         ratios, reserve_ratios = plot_dummy_path(all_df, size, phi)
+    #         data.append((_parse_map_size(size), phi, ratios, reserve_ratios))
     # generate_table(data, 'S')
     # generate_table(data, 'L')
 
@@ -382,9 +371,20 @@ def main():
     for index, row in pairs.iterrows():
         size, phi = index
         if phi >= 0:
-            ratios = plot_branch_and_bound(all_df, size, phi)
-            data.append((_parse_map_size(size), phi, ratios))
+            success_ratios = plot_recalculate(all_df, size, phi)
+            data.append((_parse_map_size(size), phi, success_ratios))
+
     generate_table(data, 'S')
+    generate_table(data, 'L')
+
+    # pairs = all_df.groupby(['size', 'phi']).first()
+    # data = []
+    # for index, row in pairs.iterrows():
+    #     size, phi = index
+    #     if phi >= 0:
+    #         ratios = plot_branch_and_bound(all_df, size, phi)
+    #         data.append((_parse_map_size(size), phi, ratios))
+    # generate_table(data, 'S')
 
 
     # print(pair)
