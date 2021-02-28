@@ -36,7 +36,8 @@ count = 0
 
 
 async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex", window_size=0,
-              phi=0.2, bound=True, sort=True, mlabel=True, reserve=False, skip=False, task_bound=False):
+              phi=0.2, bound=True, sort=True, mlabel=True, reserve=False, skip=False, task_bound=False,
+              recalculate=True, nearest=False):
     # os.chdir(project_root)
     base_filename = "%d-%d-%d-%d-%d" % (size[0], size[1], agent, task_per_agent, seed)
     task_filename = "task/well-formed-%s.task" % base_filename
@@ -49,7 +50,6 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex
         "--scheduler", scheduler,
         "--phi", str(phi),
         "-w", str(window_size),
-        "--recalculate",
     ]
     if bound:
         args.append("--bound")
@@ -69,6 +69,12 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex
     if skip:
         args.append("-skip")
         output_filename += "-skip"
+    if recalculate:
+        args.append("--recalculate")
+        output_filename += "-recalc"
+    if nearest:
+        args.append("--reserve-nearest")
+        output_filename += "-nearest"
     args += ["--output", os.path.join(result_dir, output_filename)]
     print(' '.join(args))
 
@@ -108,8 +114,8 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
                 # _run(bound=False, sort=False, mlabel=True, reserve=False, skip=False, task_bound=False),
                 # _run(bound=True, sort=True, mlabel=True, reserve=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True),
-                _run(bound=True, sort=True, mlabel=True, reserve=True, skip=True, task_bound=True),
-                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True),
+                _run(bound=True, sort=True, mlabel=True, reserve=True, skip=True, task_bound=True, nearest=True),
+                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True),
                 # _run(bound=False, sort=False, mlabel=True, reserve=False, skip=False, task_bound=False),
                 # _run(bound=True, sort=True, mlabel=True, reserve=True, skip=True, task_bound=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=False, task_bound=True),
