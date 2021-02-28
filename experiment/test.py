@@ -8,7 +8,7 @@ program = os.path.join(project_root, "cmake-build-release", "MAPF")
 data_root = os.path.join(project_root, "test-benchmark")
 result_dir = os.path.join(project_root, "result")
 os.makedirs(result_dir, exist_ok=True)
-workers = 20
+workers = 10
 
 TIMEOUT = 36000
 
@@ -114,7 +114,8 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
                 # _run(bound=False, sort=False, mlabel=True, reserve=False, skip=False, task_bound=False),
                 # _run(bound=True, sort=True, mlabel=True, reserve=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True),
-                _run(bound=True, sort=True, mlabel=True, reserve=True, skip=True, task_bound=True, nearest=True),
+                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, nearest=True),
+                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, nearest=False),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True),
                 # _run(bound=False, sort=False, mlabel=True, reserve=False, skip=False, task_bound=False),
                 # _run(bound=True, sort=True, mlabel=True, reserve=True, skip=True, task_bound=True),
