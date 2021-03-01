@@ -557,7 +557,7 @@ Solver::addEdgeOccupied(std::pair<size_t, size_t> pos, Direction direction, size
 std::pair<size_t, size_t> Solver::getNearestParkingLocation(std::pair<size_t, size_t> pos) {
     std::pair<size_t, size_t> result(map->getHeight(), map->getWidth());
     size_t infinite = std::numeric_limits<size_t>::max() / 2;
-    size_t distance = distance;
+    size_t distance = infinite;
     for (auto &p : map->getParkingLocations()) {
         auto d = map->getGraphDistance(pos, p);
         if (d < distance && !isOccupied(nodes[p.first][p.second].occupied, infinite - 1)) {

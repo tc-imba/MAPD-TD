@@ -51,10 +51,10 @@ def parse_dummy_path(df: pd.DataFrame):
     return new_df
 
 
-def parse_recalculate(df: pd.DataFrame):
-    recalculate_on_df = df[df['recalc'] == False].set_index(['agent', 'task_per_agent', 'seed'])
-    recalculate_off_df = df[df['recalc'] == True].set_index(['agent', 'task_per_agent', 'seed'])
-    new_df = recalculate_on_df.join(recalculate_off_df, on=['agent', 'task_per_agent', 'seed'], lsuffix='_on', rsuffix='_off')
+def parse_control_variable(df: pd.DataFrame, control_variable: str):
+    on_df = df[df[control_variable] == True].set_index(['agent', 'task_per_agent', 'seed'])
+    off_df = df[df[control_variable] == False].set_index(['agent', 'task_per_agent', 'seed'])
+    new_df = on_df.join(off_df, on=['agent', 'task_per_agent', 'seed'], lsuffix='_on', rsuffix='_off')
     return new_df
 
 
@@ -273,10 +273,10 @@ def plot_recalculate(df, size, phi):
     title = 'Recalculate: %s Map, Phi=%s' % (map_size, phi_str)
     print(filename, title)
 
-    new_df = parse_recalculate(new_df)
+    new_df = parse_control_variable(new_df, 'nearest')
     new_df.reset_index(level=new_df.index.names, inplace=True)
     # new_df['ratio'] = new_df['time_ms_all'] / new_df['time_ms_dynamic']
-    new_df['success_ratio'] = new_df['task_success_off'] / new_df['task_num_on']
+    new_df['success_ratio'] = new_df['task_success_on'] / new_df['task_success_off']
 
     new_df = new_df.groupby(['agent', 'task_per_agent'], as_index=False).mean()
 
