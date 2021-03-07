@@ -282,7 +282,8 @@ def plot_recalculate(df, size, phi):
 
     new_df = new_df.groupby(['agent', 'task_per_agent'], as_index=False).mean()
 
-    print_df = new_df[['agent', 'task_per_agent', 'task_num_on', 'task_num_off', 'time_ms_on', 'time_ms_off', 'success_ratio']] \
+    print_df = new_df[['agent', 'task_per_agent', 'task_num_on', 'task_success_on', 'task_success_off',
+                      'time_ms_on', 'time_ms_off', 'success_ratio']] \
         .sort_values(['agent', 'task_per_agent'])
     print(print_df)
 
