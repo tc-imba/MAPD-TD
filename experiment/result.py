@@ -265,7 +265,8 @@ def plot_dummy_path(df, size, phi):
 def plot_recalculate(df, size, phi):
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['time_ms'] >= 0) & \
            (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['reserve_all'] == False) & \
-           (df['scheduler'] == 'flex') & (df['window'] == 0) & (df['skip'] == True) & (df['task_bound'] == True)
+           (df['scheduler'] == 'flex') & (df['window'] == 0) & (df['skip'] == True) & (df['task_bound'] == True) & \
+           (df['nearest'] == False) & (df['recalc'] == True)
     new_df = df[cond].copy()
     map_size = parse_map_size(new_df)
     phi_str = str(phi)
@@ -273,7 +274,7 @@ def plot_recalculate(df, size, phi):
     title = 'Recalculate: %s Map, Phi=%s' % (map_size, phi_str)
     print(filename, title)
 
-    new_df = parse_control_variable(new_df, 'nearest')
+    new_df = parse_control_variable(new_df, 'ec')
     new_df.reset_index(level=new_df.index.names, inplace=True)
     # new_df['ratio'] = new_df['time_ms_all'] / new_df['time_ms_dynamic']
     new_df['success_ratio'] = new_df['time_ms_off'] / new_df['time_ms_on']
