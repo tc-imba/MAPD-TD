@@ -56,6 +56,7 @@ private:
     std::vector<std::vector<size_t> > distances;
     std::vector<std::vector<size_t> > distancesEndpoint;
     std::vector<std::pair<size_t, size_t>> parkingLocations;
+    std::vector<std::vector<bool> > extraCost;
 
     std::unordered_map<OccupiedKey, std::unique_ptr<OccupiedValue>, OccupiedKeyHash, OccupiedKeyEqual> occupiedMap;
 
@@ -88,6 +89,8 @@ public:
 
     size_t removeInfiniteWaiting(std::pair<size_t, size_t> pos);
 
+    size_t getExtraCost(std::pair<size_t, size_t> pos);
+
     void addEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime, size_t endTime);
 
     void removeEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime, size_t endTime);
@@ -111,8 +114,6 @@ public:
     size_t getGraphDistance(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
 
     size_t getGraphDistanceEndpoint(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
-
-    size_t getExtraCost(std::pair<size_t, size_t> pos);
 
     auto &getParkingLocations() const { return this->parkingLocations; };
 };

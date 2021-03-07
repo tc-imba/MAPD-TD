@@ -113,8 +113,10 @@ Map::Map(const std::string &filename) {
         throw std::runtime_error("map format error");
     }
     this->map.resize(this->height);
+    this->extraCost.resize(this->height);
     for (size_t i = 0; i < this->height; i++) {
         this->map[i].resize(this->width, '.');
+        this->extraCost[i].resize(this->width, false);
         if (!std::getline(fin, line) || line.length() < this->width) {
             throw std::runtime_error("map format error");
         }
@@ -181,6 +183,7 @@ static void removeOccupied(std::pair<size_t, size_t> pos, Map::Direction directi
 }
 
 size_t Map::addInfiniteWaiting(std::pair<size_t, size_t> pos, size_t startTime) {
+    extraCost[pos.first][pos.second] = true;
     OccupiedKey key = {pos, Map::Direction::NONE};
     size_t infinite = std::numeric_limits<size_t>::max() / 2;
     if (startTime == 0) {
@@ -208,6 +211,7 @@ size_t Map::addInfiniteWaiting(std::pair<size_t, size_t> pos, size_t startTime) 
 }
 
 size_t Map::removeInfiniteWaiting(std::pair<size_t, size_t> pos) {
+    extraCost[pos.first][pos.second] = false;
     OccupiedKey key = {pos, Map::Direction::NONE};
     size_t infinite = std::numeric_limits<size_t>::max() / 2;
     auto it = occupiedMap.find(key);
@@ -230,6 +234,10 @@ size_t Map::removeInfiniteWaiting(std::pair<size_t, size_t> pos) {
         }
     }
     return infinite;
+}
+
+size_t Map::getExtraCost(std::pair<size_t, size_t> pos) {
+    return extraCost[pos.first][pos.second] ? 1 : 0;
 }
 
 void Map::addEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime, size_t endTime) {
@@ -427,9 +435,3 @@ size_t Map::getGraphDistanceEndpoint(std::pair<size_t, size_t> start, std::pair<
     size_t b = end.first * width + end.second;
     return distancesEndpoint[a][b];
 }
-
-size_t Map::getExtraCost(std::pair<size_t, size_t> pos) {
-    if (map[pos.first][pos.second] == 't') return 1;
-    return 0;
-}
-

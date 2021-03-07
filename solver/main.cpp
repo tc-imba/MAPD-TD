@@ -88,8 +88,8 @@ int main(int argc, const char *argv[]) {
     optionParser.add("", false, 0, 0, "Recalculate After Flex", "-re", "--recalculate");
     optionParser.add("", false, 0, 0, "Reserve all", "-ra", "--reserve-all");
     optionParser.add("", false, 0, 0, "Skip no conflict", "-skip", "--skip-no-conflict");
-    optionParser.add("", false, 0, 0, "Extra Cost", "-ec", "--extra-cost");
-    optionParser.add("", false, 0, 0, "Extra Cost", "-rn", "--reserve-nearest");
+    optionParser.add("", false, 0, 0, "Extra cost", "-ec", "--extra-cost");
+    optionParser.add("", false, 0, 0, "Reserve nearest", "-rn", "--reserve-nearest");
     optionParser.parse(argc, argv);
 
     if (optionParser.isSet("-h")) {
