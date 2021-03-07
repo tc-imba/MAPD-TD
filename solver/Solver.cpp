@@ -135,17 +135,19 @@ Solver::createVirtualNode(std::pair<size_t, size_t> pos, size_t leaveTime, Solve
     } else {
         estimateTime += Map::getDistance(pos, scenario->getEnd());
     }
-    size_t extraCost = map->getExtraCost(pos);
-    if (parent) extraCost += parent->extraCost;
+    size_t extraCost = 0;
+    if (extraCostFlag) {
+        extraCost = map->getExtraCost(pos);
+        if (parent) extraCost += parent->extraCost;
+    }
 //    std::cout << pos.first << " " << pos.second << " " << checkpoint << " " << leaveTime << " " << estimateTime << std::endl;
 //    size_t estimateTime = leaveTime + Map::getDistance(pos, scenario->getEnd());
     return new VirtualNode{pos, leaveTime, estimateTime, parent, child, checkpoint, extraCost, hasChild, isOpen};
 }
 
 
-Solver::VirtualNode *Solver::removeVirtualNodeFromList(std::multimap<size_t, VirtualNode *> &list,
-                                                       std::multimap<size_t, VirtualNode *>::iterator it,
-                                                       bool editNode) {
+Solver::VirtualNode *
+Solver::removeVirtualNodeFromList(VirtualNodeQueue &list, VirtualNodeQueue::iterator it, bool editNode) {
     auto vNode = it->second;
     list.erase(it);
     if (editNode) {
@@ -155,8 +157,7 @@ Solver::VirtualNode *Solver::removeVirtualNodeFromList(std::multimap<size_t, Vir
     return vNode;
 }
 
-void Solver::addVirtualNodeToList(std::multimap<size_t, VirtualNode *> &list,
-                                  Solver::VirtualNode *vNode, bool editNode) {
+void Solver::addVirtualNodeToList(VirtualNodeQueue &list, VirtualNode *vNode, bool editNode) {
 //    if (vNode->isOpen && extraCostFlag && maybeSuccessNode && vNode->leaveTime > maybeSuccessNode->leaveTime) {
 //        delete vNode;
 //        return;
@@ -173,7 +174,7 @@ void Solver::addVirtualNodeToList(std::multimap<size_t, VirtualNode *> &list,
         std::cerr << std::endl;
     }*/
 
-    list.emplace(vNode->estimateTime, vNode);
+    list.emplace(std::pair<size_t, size_t>(vNode->estimateTime, vNode->extraCost), vNode);
     if (editNode) {
         auto &node = nodes[vNode->pos.first][vNode->pos.second];
         node.virtualNodes.emplace(vNode);
@@ -244,9 +245,9 @@ Solver::~Solver() {
     clean();
 }
 
-void Solver::initScenario(const Scenario *scenario, size_t startTime, size_t deadline) {
-    this->scenario = scenario;
-    this->deadline = deadline;
+void Solver::initScenario(const Scenario *_scenario, size_t startTime, size_t _deadline) {
+    this->scenario = _scenario;
+    this->deadline = _deadline;
 
     // skip the algorithm if start or end point is blocked
     auto start = scenario->getStart();
@@ -304,8 +305,11 @@ void Solver::replaceNode(VirtualNode *vNode, std::pair<size_t, size_t> pos,
                 if ((*it2)->isOpen && (*it2)->leaveTime > arrivalTime &&
                     (*it2)->leaveTime < arrivalInterval.second && !(*it2)->hasChild &&
                     (*it2)->checkpoint <= vNode->checkpoint) {
-                    auto range = open.equal_range((*it2)->estimateTime);
-                    for (auto it3 = range.first; it3 != range.second; ++it3) {
+//                    auto range = open.equal_range((*it2)->estimateTime);
+                    auto rangeBegin = open.lower_bound(std::pair<size_t, size_t>((*it2)->estimateTime, 0));
+                    auto rangeEnd = open.lower_bound(std::pair<size_t, size_t>(
+                            (*it2)->estimateTime, std::numeric_limits<size_t>::max() / 2));
+                    for (auto it3 = rangeBegin; it3 != rangeEnd; ++it3) {
                         if (it3->second == *it2) {
                             open.erase(it3);
                             break;
@@ -333,25 +337,27 @@ void Solver::replaceNode(VirtualNode *vNode, std::pair<size_t, size_t> pos,
 
 Solver::VirtualNode *Solver::step() {
     if (open.empty()) {
-        if (extraCostFlag && maybeSuccessNode) {
+        return nullptr;
+/*        if (extraCostFlag && maybeSuccessNode) {
             successNode = maybeSuccessNode;
             return successNode;
         } else {
             return nullptr;
-        }
+        }*/
     }
 
     // Get a virtual node (v, h_v, v_p) off the OPEN list with the minimum h + g(v) value
     auto it = open.begin();
+    assert(it != open.end());
     auto vNode = removeVirtualNodeFromList(open, it, false);
     auto &node = nodes[vNode->pos.first][vNode->pos.second];
 
-    if (extraCostFlag && maybeSuccessNode) {
+    /*if (extraCostFlag && maybeSuccessNode) {
         if (vNode->estimateTime > maybeSuccessNode->estimateTime + 1) {
             successNode = maybeSuccessNode;
             return successNode;
         }
-    }
+    }*/
 
 //    if (logging) {
 //        std::cout << vNode->pos.first << " " << vNode->pos.second << " " << vNode->leaveTime << " " << vNode->checkpoint << std::endl;
@@ -371,7 +377,8 @@ Solver::VirtualNode *Solver::step() {
         if (vNode->checkpoint == scenario->size() - 1) {
             if (!vNode->hasChild) {
                 // we have found the solution and exit the algorithm
-                if (extraCostFlag) {
+                successNode = vNode;
+                /*if (extraCostFlag) {
                     if (!maybeSuccessNode) {
                         maybeSuccessNode = vNode;
                     } else {
@@ -386,7 +393,7 @@ Solver::VirtualNode *Solver::step() {
                     }
                 } else {
                     successNode = vNode;
-                }
+                }*/
                 return vNode;
             }
             break;

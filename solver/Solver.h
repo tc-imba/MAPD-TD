@@ -32,12 +32,18 @@ public:
         size_t extraCost;
         bool hasChild;
         bool isOpen;
+
+        friend std::ostream &operator<<(std::ostream &os, const VirtualNode &vNode) {
+            return os << "(" << vNode.pos.first << "," << vNode.pos.second << ") "
+                      << vNode.leaveTime << " " << vNode.estimateTime << " " << vNode.extraCost;
+        }
     };
 
     struct VirtualNodeSameNodeComp {
         bool operator()(const VirtualNode *a, const VirtualNode *b) const {
             if (a == b) return false;
             if (a->leaveTime != b->leaveTime) return a->leaveTime < b->leaveTime;
+            if (a->extraCost != b->extraCost) return a->extraCost < b->extraCost;
             return a->parent < b->parent;
         }
     };
@@ -61,7 +67,8 @@ private:
     // Use a multimap instead of priority_queue to support node replace
     // key: estimateTime (ascent)
     // value: VirtualNode *
-    std::multimap<size_t, VirtualNode *> open, closed;
+    typedef std::multimap<std::pair<size_t, size_t>, VirtualNode *> VirtualNodeQueue;
+    VirtualNodeQueue open, closed;
 
 //    std::priority_queue<VirtualNode *, std::vector<VirtualNode *>, VirtualNode> open, closed;
     std::vector<std::vector<Node>> nodes;
@@ -91,7 +98,8 @@ public:
 
     size_t findFirstNotOccupiedTimestamp(boost::icl::interval_set<size_t> *occupied, size_t startTime, size_t duration);
 
-    size_t findFirstNotOccupiedTimestamp(boost::icl::interval_set<size_t> *occupied, boost::icl::interval_set<size_t> *occupied2,
+    size_t findFirstNotOccupiedTimestamp(boost::icl::interval_set<size_t> *occupied,
+                                         boost::icl::interval_set<size_t> *occupied2,
                                          size_t startTime, size_t duration);
 
 private:
@@ -102,13 +110,12 @@ private:
                                    size_t checkpoint, bool isOpen);
 
     VirtualNode *createVirtualNode(std::pair<size_t, size_t> pos, size_t leaveTime, VirtualNode *parent,
-                                   size_t checkpoint, std::pair<size_t, size_t> child, bool isOpen, bool hasChild = true);
+                                   size_t checkpoint, std::pair<size_t, size_t> child, bool isOpen,
+                                   bool hasChild = true);
 
-    VirtualNode *removeVirtualNodeFromList(std::multimap<size_t, VirtualNode *> &list,
-                                           std::multimap<size_t, VirtualNode *>::iterator it,
-                                           bool editNode);
+    VirtualNode *removeVirtualNodeFromList(VirtualNodeQueue &list, VirtualNodeQueue::iterator it, bool editNode);
 
-    void addVirtualNodeToList(std::multimap<size_t, VirtualNode *> &list, VirtualNode *vNode, bool editNode);
+    void addVirtualNodeToList(VirtualNodeQueue &list, VirtualNode *vNode, bool editNode);
 
     void initialize();
 
