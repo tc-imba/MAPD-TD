@@ -278,7 +278,7 @@ def plot_recalculate(df, size, phi):
     new_df.reset_index(level=new_df.index.names, inplace=True)
     # new_df['ratio'] = new_df['time_ms_all'] / new_df['time_ms_dynamic']
     # new_df['success_ratio'] = new_df['time_ms_off'] / new_df['time_ms_on']
-    new_df['success_ratio'] = new_df['task_num_on'] / new_df['task_num_off']
+    new_df['success_ratio'] = new_df['task_success_on'] / new_df['task_success_off']
 
     new_df = new_df.groupby(['agent', 'task_per_agent'], as_index=False).mean()
 
