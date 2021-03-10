@@ -39,7 +39,7 @@ def parse(filename):
                 task_success += 1
             if "time: " in line:
                 time_ms = line[6:-3]
-            if "reserve" in line:
+            if "reserve" in line and "nearest" not in line:
                 reserve += 1
                 arr = line.split(' ')
                 if len(arr) >= 3:
