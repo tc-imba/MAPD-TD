@@ -30,6 +30,8 @@ def parse(filename):
     task_num = int(agent) * int(agent_per_task)
     task_success = 0
     reserve = 0
+    reserve_a = 0
+    reserve_b = 1
     time_ms = -1
     with open(os.path.join(result_dir, filename)) as f:
         for line in f.readlines():
@@ -39,10 +41,18 @@ def parse(filename):
                 time_ms = line[6:-3]
             if "reserve" in line:
                 reserve += 1
+                arr = line.split(' ')
+                if len(arr) >= 3:
+                    if arr[-1] == '1':
+                        reserve_a += 1
+                    elif arr[-1] == '2':
+                        reserve_b += 1
+
     success_rate = task_success / task_num
     # print(task_success, task_num, time_ms)
     return [size, agent, agent_per_task, seed, phi, scheduler, window, bound, sort, mlabel, skip, recalc, nearest, ec,
-            task_bound, reserve_all, str(task_num), str(task_success), str(success_rate), str(reserve), str(time_ms)]
+            task_bound, reserve_all, str(task_num), str(task_success), str(success_rate), str(reserve), str(reserve_a),
+            str(reserve_b), str(time_ms)]
 
 
 def plot(phi, data):
@@ -66,7 +76,8 @@ def plot(phi, data):
 def main():
     header = ["size", "agent", "task_per_agent", "seed", "phi", "scheduler", "window", "bound", "sort",
               "mlabel", "skip", "recalc", "nearest", "ec",
-              "task_bound", "reserve_all", "task_num", "task_success", "success_rate", "reserve", "time_ms"]
+              "task_bound", "reserve_all", "task_num", "task_success", "success_rate",
+              "reserve", "reserve_a", "reserve_b", "time_ms"]
 
     data = {}
     result_dict = {}
@@ -83,7 +94,7 @@ def main():
         # print(row)
         if float(row[-1]) < 0:
             continue
-        row_signature = ','.join(row[:3] + row[4:17])
+        row_signature = ','.join(row[:3] + row[4:19])
         row_data = row[-4:]
         if row_signature not in data:
             data[row_signature] = []
