@@ -31,7 +31,7 @@ def parse(filename):
     task_success = 0
     reserve = 0
     reserve_a = 0
-    reserve_b = 1
+    reserve_b = 0
     time_ms = -1
     with open(os.path.join(result_dir, filename)) as f:
         for line in f.readlines():
@@ -41,7 +41,7 @@ def parse(filename):
                 time_ms = line[6:-3]
             if "reserve" in line and "nearest" not in line:
                 reserve += 1
-                arr = line.split(' ')
+                arr = line.strip().split(' ')
                 if len(arr) >= 3:
                     if arr[-1] == '1':
                         reserve_a += 1
@@ -94,8 +94,8 @@ def main():
         # print(row)
         if float(row[-1]) < 0:
             continue
-        row_signature = ','.join(row[:3] + row[4:19])
-        row_data = row[-4:]
+        row_signature = ','.join(row[:3] + row[4:17])
+        row_data = row[-6:]
         if row_signature not in data:
             data[row_signature] = []
         data[row_signature].append(row_data)
@@ -113,6 +113,7 @@ def main():
     with open(os.path.join(experiment_dir, name + ".csv"), "w") as f:
         f.write(",".join(header) + "\n")
         for key, value in data.items():
+            print(value)
             f.write("%s,%f,%f,%f,%f\n" % (key, value[0], value[1], value[2], value[3]))
 
     exit(0)

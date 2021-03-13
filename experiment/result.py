@@ -118,7 +118,7 @@ def plot_tasks_vs_success(df, size, phi, k):
     df['ratio'] = df['task_success'] / df['task_num']
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['task_per_agent'] == k) & (df['time_ms'] >= 0) & \
            (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['reserve_all'] == False) & \
-           (df['scheduler'] == 'flex') & (df['recalc'] == False)
+           (df['scheduler'] == 'flex') & (df['recalc'] == True) & (df['nearest'] == False) & (df['ec'] == False)
     new_df = df[cond].copy()
     map_size = parse_map_size(new_df)
     phi_str = str(phi)
@@ -126,7 +126,6 @@ def plot_tasks_vs_success(df, size, phi, k):
     title = 'Success Rate: %s Map, Phi=%s, k=%s' % (map_size, phi_str, k)
     print(filename, title)
     new_df = new_df.groupby(['agent', 'task_per_agent', 'scheduler'], as_index=False).mean()
-    print(new_df)
 
     edf_df, flex_df, window_df = parse_methods(new_df)
     plt.figure()
@@ -141,9 +140,10 @@ def plot_tasks_vs_success(df, size, phi, k):
     plt.savefig(os.path.join(plots_dir, filename))
     plt.close()
 
-    print_df = new_df[['agent', 'task_per_agent', 'scheduler', 'window', 'task_num',
-                       'task_success', 'ratio', 'time_ms']] \
+    print_df = new_df[['agent', 'task_per_agent', 'task_num',
+                       'task_success', 'ratio', 'reserve_a', 'reserve_b', 'time_ms']] \
         .sort_values(['agent', 'task_per_agent'])
+    print(print_df)
 
     ratios = []
     times = []
@@ -343,21 +343,21 @@ def main():
     #     agent, task_per_agent = index
     #     plot_phi_vs_success(all_df, agent, task_per_agent)
 
-    # pairs = all_df.groupby(['size', 'phi']).first()
-    # data = []
-    # for index, row in pairs.iterrows():
-    #     size, phi = index
-    #     if phi >= 0:
-    #         ratios = []
-    #         times = []
-    #         for k in [10]:
-    #             ratio, time = plot_tasks_vs_success(all_df, size, phi, k)
-    #             ratios.append(ratio)
-    #             times.append(time)
-    #             data.append((_parse_map_size(size), phi, ratios, times))
-    # #
-    # generate_table(data, 'S')
-    # generate_table(data, 'L')
+    pairs = all_df.groupby(['size', 'phi']).first()
+    data = []
+    for index, row in pairs.iterrows():
+        size, phi = index
+        if phi >= 0:
+            ratios = []
+            times = []
+            for k in [10]:
+                ratio, time = plot_tasks_vs_success(all_df, size, phi, k)
+                ratios.append(ratio)
+                times.append(time)
+                data.append((_parse_map_size(size), phi, ratios, times))
+    #
+    generate_table(data, 'S')
+    generate_table(data, 'L')
 
     # pairs = all_df.groupby(['size', 'phi']).first()
     # data = []
@@ -369,16 +369,16 @@ def main():
     # generate_table(data, 'S')
     # generate_table(data, 'L')
 
-    pairs = all_df.groupby(['size', 'phi']).first()
-    data = []
-    for index, row in pairs.iterrows():
-        size, phi = index
-        if phi >= 0:
-            success_ratios = plot_recalculate(all_df, size, phi)
-            data.append((_parse_map_size(size), phi, success_ratios))
-
-    generate_table(data, 'S')
-    generate_table(data, 'L')
+    # pairs = all_df.groupby(['size', 'phi']).first()
+    # data = []
+    # for index, row in pairs.iterrows():
+    #     size, phi = index
+    #     if phi >= 0:
+    #         success_ratios = plot_recalculate(all_df, size, phi)
+    #         data.append((_parse_map_size(size), phi, success_ratios))
+    #
+    # generate_table(data, 'S')
+    # generate_table(data, 'L')
 
     # pairs = all_df.groupby(['size', 'phi']).first()
     # data = []
