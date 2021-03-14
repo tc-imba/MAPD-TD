@@ -183,7 +183,7 @@ static void removeOccupied(std::pair<size_t, size_t> pos, Map::Direction directi
 }
 
 size_t Map::addInfiniteWaiting(std::pair<size_t, size_t> pos, size_t startTime) {
-    extraCost[pos.first][pos.second] = true;
+    extraCost[pos.first][pos.second] = startTime;
     OccupiedKey key = {pos, Map::Direction::NONE};
     size_t infinite = std::numeric_limits<size_t>::max() / 2;
     if (startTime == 0) {
@@ -211,7 +211,7 @@ size_t Map::addInfiniteWaiting(std::pair<size_t, size_t> pos, size_t startTime) 
 }
 
 size_t Map::removeInfiniteWaiting(std::pair<size_t, size_t> pos) {
-    extraCost[pos.first][pos.second] = false;
+    extraCost[pos.first][pos.second] = std::numeric_limits<size_t>::max();
     OccupiedKey key = {pos, Map::Direction::NONE};
     size_t infinite = std::numeric_limits<size_t>::max() / 2;
     auto it = occupiedMap.find(key);
@@ -236,8 +236,8 @@ size_t Map::removeInfiniteWaiting(std::pair<size_t, size_t> pos) {
     return infinite;
 }
 
-size_t Map::getExtraCost(std::pair<size_t, size_t> pos) {
-    return extraCost[pos.first][pos.second] ? 1 : 0;
+size_t Map::getExtraCostTime(std::pair<size_t, size_t> pos) {
+    return extraCost[pos.first][pos.second];
 }
 
 void Map::addEdgeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction, size_t startTime, size_t endTime) {

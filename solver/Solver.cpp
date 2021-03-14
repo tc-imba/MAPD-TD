@@ -137,7 +137,8 @@ Solver::createVirtualNode(std::pair<size_t, size_t> pos, size_t leaveTime, Solve
     }
     size_t extraCost = 0;
     if (extraCostFlag) {
-        extraCost = map->getExtraCost(pos);
+        size_t extraCostTime = map->getExtraCostTime(pos);
+        if (extraCostTime <= leaveTime) extraCost++;
         if (parent) extraCost += parent->extraCost;
     }
 //    std::cout << pos.first << " " << pos.second << " " << checkpoint << " " << leaveTime << " " << estimateTime << std::endl;
