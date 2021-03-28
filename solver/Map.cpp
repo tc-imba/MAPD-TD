@@ -156,8 +156,8 @@ void Map::removeNodeOccupied(std::pair<size_t, size_t> pos, size_t startTime, si
 }
 
 static void addOccupied(std::pair<size_t, size_t> pos, Map::Direction direction,
-                        boost::icl::interval_set<size_t> &occupied,
-                        boost::icl::discrete_interval<size_t> &interval) {
+                        boost::icl::interval_set <size_t> &occupied,
+                        boost::icl::discrete_interval <size_t> &interval) {
 /*    if (pos.first == 7 && pos.second == 5 && direction == Map::Direction::NONE) {
         std::cerr << "add " << interval << " to " << occupied << std::endl;
     }
@@ -171,8 +171,8 @@ static void addOccupied(std::pair<size_t, size_t> pos, Map::Direction direction,
 }
 
 static void removeOccupied(std::pair<size_t, size_t> pos, Map::Direction direction,
-                           boost::icl::interval_set<size_t> &occupied,
-                           boost::icl::discrete_interval<size_t> &interval) {
+                           boost::icl::interval_set <size_t> &occupied,
+                           boost::icl::discrete_interval <size_t> &interval) {
 /*    if (!boost::icl::contains(occupied, interval)) {
         std::cerr << "remove error: " << pos.first << " " << pos.second << " "
                   << occupied << " " << interval << std::endl;
@@ -404,6 +404,16 @@ void Map::printOccupied(std::map<size_t, size_t> *occupied) {
     for (auto item : *occupied) {
         std::cerr << "[" << item.first << "," << item.second << ") ";
     }
+}
+
+void Map::printOccupied(boost::icl::interval_set <size_t> *occupied) {
+    if (occupied) {
+        std::cerr << *occupied;
+//        for (auto item : *occupied) {
+//            std::cerr << "[" << item.lower() << "," << item.upper() << ") ";
+//        }
+    }
+//    std::cerr << std::endl;
 }
 
 std::string Map::printOccupiedMap() const {

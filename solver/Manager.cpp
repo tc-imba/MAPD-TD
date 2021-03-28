@@ -304,7 +304,6 @@ size_t Manager::computeAgentForTask(Solver &solver, size_t j, const std::vector<
     }
 
 
-
     for (auto &p : sortAgent) {
         auto i = p.first;
         auto &agent = agents[i];
@@ -571,21 +570,25 @@ bool Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector
         if (reserveAllFlag) {
             reservingAgentSet.emplace(i, 0);
         } else {
+            if (occupiedAgent < agents.size() && occupiedAgent != i) {
+                size_t reservingAgent;
+                if (vector.back().leaveTime < agents[occupiedAgent].lastTimeStamp) {
+                    reservingAgent = i;
+                } else {
+                    reservingAgent = occupiedAgent;
+                }
+                reservingAgentSet.emplace(reservingAgent, 3);
+            }
+            if (solver.isOccupied(vector.back().pos, Map::Direction::NONE,
+                                  vector.back().leaveTime + 1, std::numeric_limits<size_t>::max() / 2)) {
+                reservingAgentSet.emplace(i, 2);
+            }
             for (auto &node : vector) {
                 auto j = map->getLastWaitingAgent(node.pos);
                 if (j >= agents.size()) continue;
                 if (!agents[j].reservedPath.empty() || agents[j].lastTimeStamp > node.leaveTime) continue;
                 if (agents[j].reservePos == node.pos) continue;
                 reservingAgentSet.emplace(j, 1);
-            }
-            if (occupiedAgent < agents.size() && occupiedAgent != i) {
-                size_t reservingAgent;
-                if (agent.lastTimeStamp < agents[occupiedAgent].lastTimeStamp) {
-                    reservingAgent = i;
-                } else {
-                    reservingAgent = occupiedAgent;
-                }
-                reservingAgentSet.emplace(reservingAgent, 2);
             }
         }
     }
