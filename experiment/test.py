@@ -31,7 +31,7 @@ TASKS_PER_AGENT = [10]
 # PHIS_180 = [-0.25, -0.1, 0.25]
 PHIS = [0, 0.1, 0.25]
 
-EXPERIMENT_JOBS = EXPERIMENT_TIMES * len(AGENTS) * len(TASKS_PER_AGENT) * len(PHIS) * 2
+EXPERIMENT_JOBS = EXPERIMENT_TIMES * len(AGENTS) * len(TASKS_PER_AGENT) * len(PHIS)
 count = 0
 
 
@@ -117,8 +117,9 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
                 # _run(bound=False, sort=False, mlabel=True, reserve=False, skip=False, task_bound=False),
                 # _run(bound=True, sort=True, mlabel=True, reserve=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True),
-                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, nearest=True),
-                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, extra_cost=True),
+                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, nearest=False, extra_cost=False),
+                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, nearest=True, extra_cost=False),
+                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, nearest=False, extra_cost=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, scheduler="edf"),
                 # _run(bound=False, sort=False, mlabel=True, reserve=False, skip=False, task_bound=False),
