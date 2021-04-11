@@ -78,6 +78,7 @@ private:
 //    std::vector<size_t> tasksMaxBetaAgent;
 
     size_t maxStep, windowSize;
+    int extraCostId;
     bool boundFlag;
     bool sortFlag;
     bool multiLabelFlag;
@@ -87,7 +88,6 @@ private:
     bool recalculateFlag;
     bool reserveAllFlag;
     bool skipFlag;
-    bool extraCostFlag;
     bool reserveNearestFlag;
 
     void applyReservedPath();
@@ -117,13 +117,12 @@ private:
     bool isPathConflict(Solver &solver, Agent &agent, const std::vector<PathNode> &vector);
 
 public:
-    explicit Manager(std::string dataPath, size_t maxStep = 10000, size_t windowSize = 0,
+    explicit Manager(std::string dataPath, size_t maxStep = 10000, size_t windowSize = 0, int extraCostId = 0,
                      bool boundFlag = true, bool sortFlag = true,
                      bool multiLabelFlag = true, bool occupiedFlag = true,
                      bool deadlineBoundFlag = true, bool taskBoundFlag = true,
                      bool recalculateFlag = true, bool reserveAllFlag = true,
-                     bool skipFlag = false, bool extraCostFlag = false,
-                     bool reserveNearestFlag = false);
+                     bool skipFlag = false, bool reserveNearestFlag = false);
 
     Map *getMap(const std::string &mapName);
 

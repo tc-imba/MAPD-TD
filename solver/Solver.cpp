@@ -136,7 +136,7 @@ Solver::createVirtualNode(std::pair<size_t, size_t> pos, size_t leaveTime, Solve
         estimateTime += Map::getDistance(pos, scenario->getEnd());
     }
     size_t extraCost = 0;
-    if (extraCostFlag) {
+    if (extraCostId > 0) {
         size_t extraCostTime = map->getExtraCostTime(pos);
         if (extraCostTime <= leaveTime) extraCost++;
         if (parent) extraCost += parent->extraCost;
@@ -155,6 +155,10 @@ Solver::removeVirtualNodeFromList(VirtualNodeQueue &list, VirtualNodeQueue::iter
         auto &node = nodes[vNode->pos.first][vNode->pos.second];
         node.virtualNodes.erase(vNode);
     }
+//    if (&list == &open) {
+//        std::cerr << "remove " << vNode->pos.first << " " << vNode->pos.second << " " << vNode->estimateTime << " "
+//                  << vNode->extraCost << std::endl;
+//    }
     return vNode;
 }
 
@@ -167,7 +171,10 @@ void Solver::addVirtualNodeToList(VirtualNodeQueue &list, VirtualNode *vNode, bo
         delete vNode;
         return;
     }
-
+//    if (&list == &open) {
+//        std::cerr << "push " << vNode->pos.first << " " << vNode->pos.second << " " << vNode->estimateTime << " "
+//                  << vNode->extraCost << std::endl;
+//    }
 /*    auto &node = nodes[vNode->pos.first][vNode->pos.second];
     if (isOccupied(node.occupied, vNode->leaveTime)) {
         std::cerr << "error: " << vNode->pos.first << " " << vNode->pos.second << " " << vNode->leaveTime << std::endl;
@@ -238,8 +245,9 @@ void Solver::clean() {
 }
 
 
-Solver::Solver(Map *map, int algorithmId, bool extraCostFlag) :
-        map(map), algorithmId(algorithmId), extraCostFlag(extraCostFlag) {
+Solver::Solver(Map *map, int algorithmId, int extraCostId) :
+        map(map), algorithmId(algorithmId), extraCostId(extraCostId),
+        open(VirtualNodePairComp{extraCostId}), closed(VirtualNodePairComp{extraCostId}) {
 }
 
 Solver::~Solver() {
@@ -352,6 +360,8 @@ Solver::VirtualNode *Solver::step() {
     assert(it != open.end());
     auto vNode = removeVirtualNodeFromList(open, it, false);
     auto &node = nodes[vNode->pos.first][vNode->pos.second];
+//    std::cerr << "pop " << vNode->pos.first << " " << vNode->pos.second << " " << vNode->estimateTime << " "
+//              << vNode->extraCost << std::endl;
 
     /*if (extraCostFlag && maybeSuccessNode) {
         if (vNode->estimateTime > maybeSuccessNode->estimateTime + 1) {

@@ -11,19 +11,17 @@
 #include <algorithm>
 #include <chrono>
 
-Manager::Manager(std::string dataPath, size_t maxStep, size_t windowSize,
+Manager::Manager(std::string dataPath, size_t maxStep, size_t windowSize, int extraCostId,
                  bool boundFlag, bool sortFlag, bool multiLabelFlag, bool occupiedFlag,
                  bool deadlineBoundFlag, bool taskBoundFlag,
                  bool recalculateFlag, bool reserveAllFlag,
-                 bool skipFlag, bool extraCostFlag,
-                 bool reserveNearestFlag)
-        : dataPath(std::move(dataPath)), maxStep(maxStep), windowSize(windowSize),
+                 bool skipFlag, bool reserveNearestFlag)
+        : dataPath(std::move(dataPath)), maxStep(maxStep), windowSize(windowSize), extraCostId(extraCostId),
           boundFlag(boundFlag), sortFlag(sortFlag),
           multiLabelFlag(multiLabelFlag), occupiedFlag(occupiedFlag),
           deadlineBoundFlag(deadlineBoundFlag), taskBoundFlag(taskBoundFlag),
           recalculateFlag(recalculateFlag), reserveAllFlag(reserveAllFlag),
-          skipFlag(skipFlag), extraCostFlag(extraCostFlag),
-          reserveNearestFlag(reserveNearestFlag) {}
+          skipFlag(skipFlag), reserveNearestFlag(reserveNearestFlag) {}
 
 Map *Manager::loadMapFile(const std::string &mapName) {
     auto filePath = dataPath + "/map/" + mapName;
@@ -128,7 +126,7 @@ Map *Manager::loadTaskFile(const std::string &filename) {
 }
 
 void Manager::leastFlexFirstAssign(Map *map, int algorithm, double phi) {
-    Solver solver(map, algorithm, extraCostFlag);
+    Solver solver(map, algorithm, extraCostId);
 
     // add node constraints for parking locations
     for (size_t i = 0; i < agents.size(); i++) {

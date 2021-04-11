@@ -10,12 +10,11 @@
 #include "Manager.h"
 #include "Solver.h"
 
-std::string generateOutputFileName(const std::string &scheduler, int algorithmId,
+std::string generateOutputFileName(const std::string &scheduler, int algorithmId, int extraCostId,
                                    bool boundFlag, bool sortFlag, bool multiLabelFlag,
                                    bool deadlineBoundFlag, bool taskBoundFlag,
                                    bool recalculateFlag, bool reserveAllFlag,
-                                   bool skipFlag, bool extraCostFlag,
-                                   bool reserveNearestFlag) {
+                                   bool skipFlag, bool reserveNearestFlag) {
     std::ostringstream oss;
     oss << scheduler << "-algo-" << algorithmId;
     if (boundFlag) {
@@ -42,8 +41,8 @@ std::string generateOutputFileName(const std::string &scheduler, int algorithmId
     if (skipFlag) {
         oss << "-skip";
     }
-    if (extraCostFlag) {
-        oss << "-ec";
+    if (extraCostId > 0) {
+        oss << "-ec-" << extraCostId;
     }
     if (reserveNearestFlag) {
         oss << "-nearest";
@@ -74,6 +73,9 @@ int main(int argc, const char *argv[]) {
     auto validAlgorithm = new ez::ezOptionValidator("s1", "gele", "0,1");
     optionParser.add("0", false, 1, 0, "Algorithm (deprecated, only 0 working)", "-a", "--algorithm", validAlgorithm);
 
+    auto validExtraCost = new ez::ezOptionValidator("s1", "ge", "0");
+    optionParser.add("0", false, 1, 0, "Extra cost (0: closed)", "-ec", "--extra-cost", validExtraCost);
+
     auto validMaxStep = new ez::ezOptionValidator("u4");
     optionParser.add("100000", false, 1, 0, "Max Step", "--max-step", validMaxStep);
 
@@ -88,7 +90,6 @@ int main(int argc, const char *argv[]) {
     optionParser.add("", false, 0, 0, "Recalculate After Flex", "-re", "--recalculate");
     optionParser.add("", false, 0, 0, "Reserve all", "-ra", "--reserve-all");
     optionParser.add("", false, 0, 0, "Skip no conflict", "-skip", "--skip-no-conflict");
-    optionParser.add("", false, 0, 0, "Extra cost", "-ec", "--extra-cost");
     optionParser.add("", false, 0, 0, "Reserve nearest", "-rn", "--reserve-nearest");
     optionParser.parse(argc, argv);
 
@@ -101,9 +102,9 @@ int main(int argc, const char *argv[]) {
 
     std::string dataPath, taskFile, outputFile, scheduler;
     double phi;
-    int algorithmId;
+    int algorithmId, extraCostId;
     bool boundFlag, sortFlag, multiLabelFlag, deadlineBoundFlag,
-            taskBoundFlag, recalculateFlag, reserveAllFlag, skipFlag, extraCostFlag, reserveNearestFlag;
+            taskBoundFlag, recalculateFlag, reserveAllFlag, skipFlag, reserveNearestFlag;
     unsigned long long maxStep, windowSize;
 
     optionParser.get("--data")->getString(dataPath);
@@ -112,6 +113,7 @@ int main(int argc, const char *argv[]) {
     optionParser.get("--scheduler")->getString(scheduler);
     optionParser.get("--phi")->getDouble(phi);
     optionParser.get("--algorithm")->getInt(algorithmId);
+    optionParser.get("--extra-cost")->getInt(extraCostId);
     optionParser.get("--max-step")->getULongLong(maxStep);
     optionParser.get("--window")->getULongLong(windowSize);
     boundFlag = optionParser.isSet("--bound");
@@ -122,16 +124,16 @@ int main(int argc, const char *argv[]) {
     recalculateFlag = optionParser.isSet("--recalculate");
     reserveAllFlag = optionParser.isSet("--reserve-all");
     skipFlag = optionParser.isSet("--skip-no-conflict");
-    extraCostFlag = optionParser.isSet("--extra-cost");
     reserveNearestFlag = optionParser.isSet("--reserve-nearest");
 
     auto coutBuf = std::cout.rdbuf();
     std::ofstream fout;
     if (!outputFile.empty()) {
         if (outputFile == "auto") {
-            outputFile = generateOutputFileName(scheduler, algorithmId, boundFlag, sortFlag, multiLabelFlag,
+            outputFile = generateOutputFileName(scheduler, algorithmId, extraCostId,
+                                                boundFlag, sortFlag, multiLabelFlag,
                                                 deadlineBoundFlag, taskBoundFlag, recalculateFlag, reserveAllFlag,
-                                                skipFlag, extraCostFlag, reserveNearestFlag);
+                                                skipFlag, reserveNearestFlag);
         }
         fout.open(outputFile);
         std::cout.rdbuf(fout.rdbuf());
@@ -139,12 +141,11 @@ int main(int argc, const char *argv[]) {
     std::cerr << outputFile << std::endl;
 
     Manager manager(
-            dataPath, maxStep, windowSize,
+            dataPath, maxStep, windowSize, extraCostId,
             boundFlag, sortFlag, multiLabelFlag, true,
             deadlineBoundFlag, taskBoundFlag,
             recalculateFlag, reserveAllFlag,
-            skipFlag, extraCostFlag,
-            reserveNearestFlag
+            skipFlag, reserveNearestFlag
     );
     auto map = manager.loadTaskFile(taskFile);
 

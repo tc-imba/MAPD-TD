@@ -25,6 +25,11 @@ def parse(filename):
     recalc = str("recalc" in args)
     nearest = str("nearest" in args)
     ec = str("ec" in args)
+    # try:
+    #     ec_index = args.index("ec")
+    #     ec = int(args[ec_index + 1])
+    # except:
+    #     ec = 0
     # print(size, agent, agent_per_task, phi, scheduler, bound, sort, mlabel)
 
     task_num = int(agent) * int(agent_per_task)
@@ -53,7 +58,7 @@ def parse(filename):
 
     success_rate = task_success / task_num
     # print(task_success, task_num, time_ms)
-    return [size, agent, agent_per_task, seed, phi, scheduler, window, bound, sort, mlabel, skip, recalc, nearest, ec,
+    return [size, agent, agent_per_task, seed, phi, scheduler, window, bound, sort, mlabel, skip, recalc, nearest, str(ec),
             task_bound, reserve_all, str(task_num), str(task_success), str(success_rate), str(reserve), str(reserve_a),
             str(reserve_b), str(reserve_c), str(time_ms)]
 

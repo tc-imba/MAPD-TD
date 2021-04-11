@@ -63,11 +63,31 @@ public:
         std::array<Edge, 4> edges;
     };
 
-private:
     // Use a multimap instead of priority_queue to support node replace
     // key: estimateTime (ascent)
     // value: VirtualNode *
-    typedef std::multimap<std::pair<size_t, size_t>, VirtualNode *> VirtualNodeQueue;
+
+    struct VirtualNodePairComp  {
+        int extraCostId = 0;
+
+        constexpr bool operator()(const std::pair<size_t, size_t> &a, const std::pair<size_t, size_t> &b) const {
+            if (extraCostId == 0) {
+                if (a.first == b.first) return a.second < b.second;
+                return a.first < b.first;
+            } else {
+                int diff = (int) (a.first <= b.first ? (b.first - a.first) : (a.first - b.first));
+                if (diff < extraCostId) {
+                    if (a.second == b.second) return a.first < b.first;
+                    return a.second < b.second;
+                }
+                return a.first < b.first;
+            }
+        }
+    };
+
+    typedef std::multimap<std::pair<size_t, size_t>, VirtualNode *, VirtualNodePairComp> VirtualNodeQueue;
+
+private:
     VirtualNodeQueue open, closed;
 
 //    std::priority_queue<VirtualNode *, std::vector<VirtualNode *>, VirtualNode> open, closed;
@@ -79,7 +99,7 @@ private:
     const int algorithmId;
     bool logging = false;
     size_t deadline;
-    bool extraCostFlag;
+    int extraCostId;
 
 public:
     static bool isOccupied(boost::icl::interval_set<size_t> *occupied, boost::icl::discrete_interval<size_t> interval);
@@ -125,7 +145,7 @@ private:
     replaceNode(VirtualNode *vNode, std::pair<size_t, size_t> pos, Node &neighborNode, Edge &edge, bool needExamine);
 
 public:
-    explicit Solver(Map *map, int algorithmId = 0, bool extraCostFlag = false);
+    explicit Solver(Map *map, int algorithmId = 0, int extraCostId = 0);
 
     ~Solver();
 
