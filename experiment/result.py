@@ -358,21 +358,21 @@ def main():
     #     agent, task_per_agent = index
     #     plot_phi_vs_success(all_df, agent, task_per_agent)
 
-    # pairs = all_df.groupby(['size', 'phi']).first()
-    # data = []
-    # for index, row in pairs.iterrows():
-    #     size, phi = index
-    #     if phi >= 0:
-    #         ratios = []
-    #         times = []
-    #         for k in [10]:
-    #             ratio, time = plot_tasks_vs_success(all_df, size, phi, k)
-    #             ratios.append(ratio)
-    #             times.append(time)
-    #             data.append((_parse_map_size(size), phi, ratios, times))
-    # #
-    # generate_table(data, 'S')
-    # generate_table(data, 'L')
+    pairs = all_df.groupby(['size', 'phi']).first()
+    data = []
+    for index, row in pairs.iterrows():
+        size, phi = index
+        if phi >= 0:
+            ratios = []
+            times = []
+            for k in [10]:
+                ratio, time = plot_tasks_vs_success(all_df, size, phi, k)
+                ratios.append(ratio)
+                times.append(time)
+                data.append((_parse_map_size(size), phi, ratios, times))
+    #
+    generate_table(data, 'S')
+    generate_table(data, 'L')
 
     # pairs = all_df.groupby(['size', 'phi']).first()
     # data = []
@@ -410,12 +410,12 @@ def main():
     # task_per_agent = pair[['task_per_agent']]
     # print(agent, task_per_agent)
 
-    pairs = all_df.groupby(['size', 'phi']).first()
-    data = []
-    for index, row in pairs.iterrows():
-        size, phi = index
-        if phi >= 0:
-            plot_nearest_ec(all_df, size, phi)
+    # pairs = all_df.groupby(['size', 'phi']).first()
+    # data = []
+    # for index, row in pairs.iterrows():
+    #     size, phi = index
+    #     if phi >= 0:
+    #         plot_nearest_ec(all_df, size, phi)
 
 
 
