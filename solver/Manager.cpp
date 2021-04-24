@@ -584,6 +584,7 @@ bool Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector
             for (auto &node : vector) {
                 auto j = map->getLastWaitingAgent(node.pos);
                 if (j >= agents.size()) continue;
+                if (map->isParkingLocation(agents[j].reservePos)) continue;
                 if (!agents[j].reservedPath.empty() || agents[j].lastTimeStamp > node.leaveTime) continue;
                 if (agents[j].reservePos == node.pos) continue;
                 reservingAgentSet.emplace(j, 1);
@@ -634,7 +635,6 @@ bool Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector
             for (auto &p : reservingAgentSet) {
                 std::cout << "reserve: " << p.first << " " << p.second << std::endl;
             }
-
 //            std::cerr << std::endl;
         } else {
 //            exit(-1);

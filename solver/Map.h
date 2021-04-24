@@ -118,6 +118,8 @@ public:
     size_t getGraphDistanceEndpoint(std::pair<size_t, size_t> start, std::pair<size_t, size_t> end);
 
     auto &getParkingLocations() const { return this->parkingLocations; };
+
+    bool isParkingLocation(std::pair<size_t, size_t> pos) const;
 };
 
 

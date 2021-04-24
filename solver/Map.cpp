@@ -445,3 +445,8 @@ size_t Map::getGraphDistanceEndpoint(std::pair<size_t, size_t> start, std::pair<
     size_t b = end.first * width + end.second;
     return distancesEndpoint[a][b];
 }
+
+bool Map::isParkingLocation(std::pair<size_t, size_t> pos) const {
+    assert(pos.first < height && pos.second < width);
+    return map[pos.first][pos.second] == 'p';
+}

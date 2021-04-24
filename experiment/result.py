@@ -206,7 +206,7 @@ def plot_branch_and_bound(df, size, phi):
 
 def plot_dummy_path(df, size, phi):
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['time_ms'] >= 0) & \
-           (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['recalc'] == False) & \
+           (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['recalc'] == True) & \
            (df['scheduler'] == 'flex') & (df['window'] == 0) & (df['skip'] == True) & (df['task_bound'] == True)
     new_df = df[cond].copy()
     # parse_dummy_path(new_df)
@@ -374,15 +374,15 @@ def main():
     generate_table(data, 'S')
     generate_table(data, 'L')
 
-    # pairs = all_df.groupby(['size', 'phi']).first()
-    # data = []
-    # for index, row in pairs.iterrows():
-    #     size, phi = index
-    #     if phi >= 0:
-    #         ratios, reserve_ratios = plot_dummy_path(all_df, size, phi)
-    #         data.append((_parse_map_size(size), phi, ratios, reserve_ratios))
-    # generate_table(data, 'S')
-    # generate_table(data, 'L')
+    pairs = all_df.groupby(['size', 'phi']).first()
+    data = []
+    for index, row in pairs.iterrows():
+        size, phi = index
+        if phi >= 0:
+            ratios, reserve_ratios = plot_dummy_path(all_df, size, phi)
+            data.append((_parse_map_size(size), phi, ratios, reserve_ratios))
+    generate_table(data, 'S')
+    generate_table(data, 'L')
 
     # pairs = all_df.groupby(['size', 'phi']).first()
     # data = []
