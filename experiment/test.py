@@ -12,7 +12,7 @@ workers = 10
 
 TIMEOUT = 36000
 
-MAP = "large"
+MAP = "small"
 
 if MAP == "small":
     MAP_SIZE = (21, 35)
@@ -114,12 +114,12 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
             _run = functools.partial(run, size=size, agent=agent, task_per_agent=task_per_agent, seed=seed,
                                      scheduler=scheduler, window_size=window_size, phi=phi)
             tasks += [
-                # _run(bound=False, sort=False, mlabel=True, reserve=False, skip=False, task_bound=False),
+                _run(bound=False, sort=False, mlabel=True, reserve=False, skip=False, task_bound=False),
                 # _run(bound=True, sort=True, mlabel=True, reserve=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True),
-                _run(bound=True, sort=True, mlabel=True, reserve=True, skip=True, task_bound=True, recalculate=True),
-                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, recalculate=True),
-                _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, recalculate=False),
+                # _run(bound=True, sort=True, mlabel=True, reserve=True, skip=True, task_bound=True, recalculate=True),
+                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, recalculate=True),
+                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, recalculate=False),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, nearest=False, extra_cost=False),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, nearest=True, extra_cost=False),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, nearest=False, extra_cost=True),
