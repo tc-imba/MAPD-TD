@@ -12,7 +12,7 @@ workers = 10
 
 TIMEOUT = 36000
 
-MAP = "small"
+MAP = "large"
 
 if MAP == "small":
     MAP_SIZE = (21, 35)
@@ -31,13 +31,13 @@ TASKS_PER_AGENT = [10]
 # PHIS_180 = [-0.25, -0.1, 0.25]
 PHIS = [0, 0.1, 0.25]
 
-EXPERIMENT_JOBS = EXPERIMENT_TIMES * len(AGENTS) * len(TASKS_PER_AGENT) * len(PHIS)
+EXPERIMENT_JOBS = EXPERIMENT_TIMES * len(AGENTS) * len(TASKS_PER_AGENT) * len(PHIS) * 4
 count = 0
 
 
 async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex", window_size=0,
-              phi=0.2, bound=True, sort=True, mlabel=True, reserve=False, skip=False, task_bound=False,
-              recalculate=True, nearest=False, extra_cost=False):
+              phi=0.2, bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True,
+              recalculate=True, nearest=False, extra_cost=False, retry=False):
     # os.chdir(project_root)
     base_filename = "%d-%d-%d-%d-%d" % (size[0], size[1], agent, task_per_agent, seed)
     task_filename = "task/well-formed-%s.task" % base_filename
@@ -78,6 +78,9 @@ async def run(size=(21, 35), agent=10, task_per_agent=2, seed=0, scheduler="flex
     if extra_cost:
         args.append("--extra-cost")
         output_filename += "-ec"
+    if retry:
+        args.append("--retry")
+        output_filename += "-retry"
     args += ["--output", os.path.join(result_dir, output_filename)]
     print(' '.join(args))
 
@@ -114,24 +117,13 @@ async def run_task(size=(21, 35), agent=10, task_per_agent=2, scheduler="flex", 
             _run = functools.partial(run, size=size, agent=agent, task_per_agent=task_per_agent, seed=seed,
                                      scheduler=scheduler, window_size=window_size, phi=phi)
             tasks += [
-                _run(bound=False, sort=False, mlabel=True, reserve=False, skip=False, task_bound=False),
+                # _run(bound=False, sort=False, mlabel=True, reserve=False, skip=False, task_bound=False),
                 # _run(bound=True, sort=True, mlabel=True, reserve=True),
                 # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True),
-                # _run(bound=True, sort=True, mlabel=True, reserve=True, skip=True, task_bound=True, recalculate=True),
-                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, recalculate=True),
-                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, recalculate=False),
-                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, nearest=False, extra_cost=False),
-                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, nearest=True, extra_cost=False),
-                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, nearest=False, extra_cost=True),
-                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True),
-                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True, scheduler="edf"),
-                # _run(bound=False, sort=False, mlabel=True, reserve=False, skip=False, task_bound=False),
-                # _run(bound=True, sort=True, mlabel=True, reserve=True, skip=True, task_bound=True),
-                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=False, task_bound=True),
-                # _run(bound=True, sort=True, mlabel=True, skip=False, task_bound=True),
-                # _run(bound=True, sort=True, mlabel=True, reserve=False, skip=True, task_bound=True),
-                # _run(bound=False, sort=False, mlabel=True, reserve=False),
-                # _run(bound=True, sort=False, mlabel=True, reserve=False),
+                _run(reserve=True, recalculate=True, retry=True),
+                _run(reserve=True, recalculate=False, retry=True),
+                _run(reserve=False, recalculate=True, retry=True),
+                _run(reserve=False, recalculate=False, retry=True),
             ]
     await asyncio.gather(*tasks)
 

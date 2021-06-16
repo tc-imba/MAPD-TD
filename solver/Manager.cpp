@@ -15,13 +15,13 @@ Manager::Manager(std::string dataPath, size_t maxStep, size_t windowSize, int ex
                  bool boundFlag, bool sortFlag, bool multiLabelFlag, bool occupiedFlag,
                  bool deadlineBoundFlag, bool taskBoundFlag,
                  bool recalculateFlag, bool reserveAllFlag,
-                 bool skipFlag, bool reserveNearestFlag)
+                 bool skipFlag, bool reserveNearestFlag, bool retryFlag)
         : dataPath(std::move(dataPath)), maxStep(maxStep), windowSize(windowSize), extraCostId(extraCostId),
           boundFlag(boundFlag), sortFlag(sortFlag),
           multiLabelFlag(multiLabelFlag), occupiedFlag(occupiedFlag),
           deadlineBoundFlag(deadlineBoundFlag), taskBoundFlag(taskBoundFlag),
           recalculateFlag(recalculateFlag), reserveAllFlag(reserveAllFlag),
-          skipFlag(skipFlag), reserveNearestFlag(reserveNearestFlag) {}
+          skipFlag(skipFlag), reserveNearestFlag(reserveNearestFlag), retryFlag(retryFlag) {}
 
 Map *Manager::loadMapFile(const std::string &mapName) {
     auto filePath = dataPath + "/map/" + mapName;
@@ -557,7 +557,6 @@ bool Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector
     map->removeInfiniteWaiting(agent.reservePos);
     if (!agent.reservedPath.empty()) {
         removeAgentPathConstraints(map, agent, agent.reservedPath);
-        std::cout << "clear: " << i << std::endl;
     }
     addAgentPathConstraints(map, agent, vector);
 
@@ -673,11 +672,14 @@ bool Manager::assignTask(Solver &solver, size_t i, std::vector<PathNode> &vector
             result = false;
         }
     }
-    if (agentMaxTimestamp < agent.lastTimeStamp) {
-        agentMaxTimestamp = agent.lastTimeStamp;
-        agentMaxTimestampAgent = i;
+    if (result) {
+        std::cout << "clear: " << i << std::endl;
+        if (agentMaxTimestamp < agent.lastTimeStamp) {
+            agentMaxTimestamp = agent.lastTimeStamp;
+            agentMaxTimestampAgent = i;
+        }
+        agentMaxReserveTimestamp = std::max(agentMaxReserveTimestamp, agent.lastTimeStamp);
     }
-    agentMaxReserveTimestamp = std::max(agentMaxReserveTimestamp, agent.lastTimeStamp);
     return result;
 /*
     if (occupiedFlag && occupiedAgent < agents.size() && occupiedAgent != i) {
@@ -788,13 +790,66 @@ void Manager::selectTask(Solver &solver, int x, double phi) {
     }
 //    std::cerr << " " << selectedTask << std::endl;
 
-    bool taskSuccess = selectedTask < tasks.size();
-    if (taskSuccess) {
+    bool taskSuccess = false;
+    bool firstTry = true;
+
+    std::vector<std::pair<size_t, double> > tempAgents;
+    tempAgents.reserve(agents.size());
+    std::vector<bool> availableAgents(agents.size(), true);
+
+    while (selectedTask < tasks.size() && !taskSuccess) {
         auto &task = tasks[selectedTask];
         auto selectedAgent = task->maxBetaAgent;
         auto taskBeta = agents[selectedAgent].flexibility[selectedTask].beta;
 
-        if (recalculateFlag) {
+        if (!firstTry || recalculateFlag) {
+            tempAgents.clear();
+            for (size_t i = 0; i < agents.size(); i++) {
+                if (!availableAgents[i]) continue;
+                double beta = -1;
+                if (agents[i].flexibility[selectedTask].beta >= 0) {
+                    beta = agents[i].flexibility[selectedTask].beta;
+                } else {
+                    // here we use the graph distance to sort for beta < 0
+                    beta -= map->getGraphDistance(agents[i].currentPos, task->scenario.getStart());
+//                    beta -= std::abs((double) agents[i].currentPos.first - task->scenario.getStart().first);
+//                    beta -= std::abs((double) agents[i].currentPos.second - task->scenario.getStart().second);
+                }
+                tempAgents.emplace_back(i, beta);
+            }
+            if (sortFlag) {
+                std::sort(tempAgents.begin(), tempAgents.end(),
+                          [](const auto &a, const auto &b) { return a.second > b.second; });
+            }
+            double minBeta = -1;
+            size_t minBetaTask = std::numeric_limits<size_t>::max();
+            Count count;
+            auto newSelectedAgent = computeAgentForTask(solver, selectedTask, tempAgents, phi, minBeta, minBetaTask,
+                                                        count, recalculateFlag);
+            selectedAgent = newSelectedAgent;
+        }
+
+        if (selectedAgent >= agents.size()) {
+            taskSuccess = false;
+            break;
+        }
+
+        auto &flex = agents[selectedAgent].flexibility[selectedTask];
+        std::cout << "agent: " << selectedAgent << ", task: "
+                  << tasks[selectedTask]->scenario.getBucket() << ", flex: "
+                  << taskBeta << "(" << flex.beta << ")" << std::endl;
+//        for (auto &p : flex.path) {
+//            std::cout << p.pos.first << " " << p.pos.second << " " << p.leaveTime << std::endl;
+//        }
+        taskSuccess = assignTask(solver, selectedAgent, flex.path, flex.occupiedAgent);
+        if (taskSuccess) {
+            agents[selectedAgent].flexibility.clear();
+        } else {
+            if (!retryFlag) break;
+            firstTry = false;
+            availableAgents[selectedAgent] = false;
+        }
+/*        if (recalculateFlag) {
             std::vector<std::pair<size_t, double> > tempAgents(agents.size());
             for (size_t i = 0; i < agents.size(); i++) {
                 double beta = -1;
@@ -818,9 +873,9 @@ void Manager::selectTask(Solver &solver, int x, double phi) {
             Count count;
             auto newSelectedAgent = computeAgentForTask(solver, selectedTask, tempAgents, phi, minBeta, minBetaTask,
                                                         count, true);
-            if (selectedAgent != newSelectedAgent) {
+//            if (selectedAgent != newSelectedAgent) {
 //                std::cerr << "reselect agent: " << selectedAgent << " -> " << newSelectedAgent << std::endl;
-            }
+//            }
             selectedAgent = newSelectedAgent;
         }
 
@@ -832,14 +887,18 @@ void Manager::selectTask(Solver &solver, int x, double phi) {
 //            std::cout << p.pos.first << " " << p.pos.second << " " << p.leaveTime << std::endl;
 //        }
         taskSuccess = assignTask(solver, selectedAgent, flex.path, flex.occupiedAgent);
-        agents[selectedAgent].flexibility.clear();
+        if (taskSuccess) {
+            agents[selectedAgent].flexibility.clear();
+        }*/
     }
 
     std::vector<std::unique_ptr<Task> > newTasks;
     for (size_t j = 0; j < tasks.size(); j++) {
         auto &task = tasks[j];
-        if ((task->maxBetaAgent >= agents.size() && task->released) || (j == selectedTask && !taskSuccess)) {
-            std::cout << "fail task " << task->scenario.getBucket() << std::endl;
+        if (task->maxBetaAgent >= agents.size() && task->released) {
+            std::cout << "fail task (deadline) " << task->scenario.getBucket() << std::endl;
+        } else if (j == selectedTask && !taskSuccess) {
+            std::cout << "fail task (no agent) " << task->scenario.getBucket() << std::endl;
         } else if (j == selectedTask) {
             std::cout << "complete task " << task->scenario.getBucket() << std::endl;
 //                std::cout <<  << "(" it->get()->getStart().first << "," << it->get()->getStart().second << " -> "

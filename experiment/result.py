@@ -117,7 +117,7 @@ def plot_phi(df):
 def plot_tasks_vs_success(df, size, phi, k):
     df['ratio'] = df['task_success'] / df['task_num']
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['task_per_agent'] == k) & (df['time_ms'] >= 0) & \
-           (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['reserve_all'] == False) & \
+           (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['reserve_all'] == True) & \
            (df['scheduler'] == 'flex') & (df['recalc'] == True) & (df['nearest'] == False) & (df['ec'] == False)
     new_df = df[cond].copy()
     map_size = parse_map_size(new_df)
@@ -159,7 +159,7 @@ def plot_tasks_vs_success(df, size, phi, k):
 def plot_branch_and_bound(df, size, phi):
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['time_ms'] >= 0) & \
            (df['mlabel'] == True) & (df['reserve_all'] == False) & \
-           (df['scheduler'] == 'flex') & (df['window'] == 0) & (df['recalc'] == False)
+           (df['scheduler'] == 'flex') & (df['window'] == 0) & (df['recalc'] == True)
     new_df = df[cond].copy()
     if len(new_df) == 0:
         return []
@@ -219,6 +219,7 @@ def plot_dummy_path(df, size, phi):
     new_df = parse_dummy_path(new_df)
     new_df.reset_index(level=new_df.index.names, inplace=True)
     new_df['ratio'] = new_df['time_ms_all'] / new_df['time_ms_dynamic']
+    # new_df['reserve_ratio'] = new_df['reserve_dynamic'] / new_df['task_num_dynamic']
     new_df['reserve_ratio'] = new_df['reserve_dynamic'] / new_df['task_success_dynamic']
 
     new_df = new_df.groupby(['agent', 'task_per_agent'], as_index=False).mean()
@@ -395,14 +396,14 @@ def main():
     # generate_table(data, 'S')
     # generate_table(data, 'L')
 
-    # pairs = all_df.groupby(['size', 'phi']).first()
-    # data = []
-    # for index, row in pairs.iterrows():
-    #     size, phi = index
-    #     if phi >= 0:
-    #         ratios = plot_branch_and_bound(all_df, size, phi)
-    #         data.append((_parse_map_size(size), phi, ratios))
-    # generate_table(data, 'S')
+    pairs = all_df.groupby(['size', 'phi']).first()
+    data = []
+    for index, row in pairs.iterrows():
+        size, phi = index
+        if phi >= 0:
+            ratios = plot_branch_and_bound(all_df, size, phi)
+            data.append((_parse_map_size(size), phi, ratios))
+    generate_table(data, 'S')
 
 
     # print(pair)

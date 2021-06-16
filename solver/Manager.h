@@ -89,6 +89,7 @@ private:
     bool reserveAllFlag;
     bool skipFlag;
     bool reserveNearestFlag;
+    bool retryFlag;
 
     void applyReservedPath();
 
@@ -122,7 +123,7 @@ public:
                      bool multiLabelFlag = true, bool occupiedFlag = true,
                      bool deadlineBoundFlag = true, bool taskBoundFlag = true,
                      bool recalculateFlag = true, bool reserveAllFlag = true,
-                     bool skipFlag = false, bool reserveNearestFlag = false);
+                     bool skipFlag = false, bool reserveNearestFlag = false, bool retryFlag = false);
 
     Map *getMap(const std::string &mapName);
 

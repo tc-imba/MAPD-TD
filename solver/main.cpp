@@ -14,7 +14,7 @@ std::string generateOutputFileName(const std::string &scheduler, int algorithmId
                                    bool boundFlag, bool sortFlag, bool multiLabelFlag,
                                    bool deadlineBoundFlag, bool taskBoundFlag,
                                    bool recalculateFlag, bool reserveAllFlag,
-                                   bool skipFlag, bool reserveNearestFlag) {
+                                   bool skipFlag, bool reserveNearestFlag, bool retryFlag) {
     std::ostringstream oss;
     oss << scheduler << "-algo-" << algorithmId;
     if (boundFlag) {
@@ -46,6 +46,9 @@ std::string generateOutputFileName(const std::string &scheduler, int algorithmId
     }
     if (reserveNearestFlag) {
         oss << "-nearest";
+    }
+    if (retryFlag) {
+        oss << "-retry";
     }
     oss << ".txt";
     return oss.str();
@@ -91,6 +94,7 @@ int main(int argc, const char *argv[]) {
     optionParser.add("", false, 0, 0, "Reserve all", "-ra", "--reserve-all");
     optionParser.add("", false, 0, 0, "Skip no conflict", "-skip", "--skip-no-conflict");
     optionParser.add("", false, 0, 0, "Reserve nearest", "-rn", "--reserve-nearest");
+    optionParser.add("", false, 0, 0, "Reserve nearest", "--retry");
     optionParser.parse(argc, argv);
 
     if (optionParser.isSet("-h")) {
@@ -103,8 +107,8 @@ int main(int argc, const char *argv[]) {
     std::string dataPath, taskFile, outputFile, scheduler;
     double phi;
     int algorithmId, extraCostId;
-    bool boundFlag, sortFlag, multiLabelFlag, deadlineBoundFlag,
-            taskBoundFlag, recalculateFlag, reserveAllFlag, skipFlag, reserveNearestFlag;
+    bool boundFlag, sortFlag, multiLabelFlag, deadlineBoundFlag, taskBoundFlag, recalculateFlag,
+            reserveAllFlag, skipFlag, reserveNearestFlag, retryFlag;
     unsigned long long maxStep, windowSize;
 
     optionParser.get("--data")->getString(dataPath);
@@ -125,6 +129,7 @@ int main(int argc, const char *argv[]) {
     reserveAllFlag = optionParser.isSet("--reserve-all");
     skipFlag = optionParser.isSet("--skip-no-conflict");
     reserveNearestFlag = optionParser.isSet("--reserve-nearest");
+    retryFlag = optionParser.isSet("--retry");
 
     auto coutBuf = std::cout.rdbuf();
     std::ofstream fout;
@@ -133,7 +138,7 @@ int main(int argc, const char *argv[]) {
             outputFile = generateOutputFileName(scheduler, algorithmId, extraCostId,
                                                 boundFlag, sortFlag, multiLabelFlag,
                                                 deadlineBoundFlag, taskBoundFlag, recalculateFlag, reserveAllFlag,
-                                                skipFlag, reserveNearestFlag);
+                                                skipFlag, reserveNearestFlag, retryFlag);
         }
         fout.open(outputFile);
         std::cout.rdbuf(fout.rdbuf());
@@ -145,7 +150,7 @@ int main(int argc, const char *argv[]) {
             boundFlag, sortFlag, multiLabelFlag, true,
             deadlineBoundFlag, taskBoundFlag,
             recalculateFlag, reserveAllFlag,
-            skipFlag, reserveNearestFlag
+            skipFlag, reserveNearestFlag, retryFlag
     );
     auto map = manager.loadTaskFile(taskFile);
 
