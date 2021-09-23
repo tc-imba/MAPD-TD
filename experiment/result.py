@@ -24,7 +24,8 @@ def _parse_map_size(size):
 
 def parse_map_size(df: pd.DataFrame):
     arr = df['size'].unique()
-    assert len(arr) == 1
+    if len(arr) != 1:
+        return ''
     return _parse_map_size(arr[0])
 
 
@@ -47,7 +48,8 @@ def parse_branch_and_bound(df: pd.DataFrame):
 def parse_dummy_path(df: pd.DataFrame):
     reserve_dynamic_df = df[df['reserve_all'] == False].set_index(['agent', 'task_per_agent', 'seed'])
     reserve_all_df = df[df['reserve_all'] == True].set_index(['agent', 'task_per_agent', 'seed'])
-    new_df = reserve_dynamic_df.join(reserve_all_df, on=['agent', 'task_per_agent', 'seed'], lsuffix='_dynamic', rsuffix='_all')
+    new_df = reserve_dynamic_df.join(reserve_all_df, on=['agent', 'task_per_agent', 'seed'], lsuffix='_dynamic',
+                                     rsuffix='_all')
     return new_df
 
 
@@ -117,10 +119,15 @@ def plot_phi(df):
 def plot_tasks_vs_success(df, size, phi, k):
     df['ratio'] = df['task_success'] / df['task_num']
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['task_per_agent'] == k) & (df['time_ms'] >= 0) & \
-           (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['reserve_all'] == True) & \
-           (df['scheduler'] == 'flex') & (df['recalc'] == True) & (df['nearest'] == False) & (df['ec'] == False)
+           (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['reserve_all'] == False) & \
+           (df['scheduler'] == 'flex') & (df['recalc'] == True) & (df['nearest'] == False) & (df['ec'] == False) & \
+           (df['retry'] == True)
     new_df = df[cond].copy()
     map_size = parse_map_size(new_df)
+
+    if not map_size:
+        return '', ''
+
     phi_str = str(phi)
     filename = 'SR-%s-PHI-%s-k-%s.png' % (map_size, phi_str.replace('-', 'n'), k)
     title = 'Success Rate: %s Map, Phi=%s, k=%s' % (map_size, phi_str, k)
@@ -140,8 +147,8 @@ def plot_tasks_vs_success(df, size, phi, k):
     plt.savefig(os.path.join(plots_dir, filename))
     plt.close()
 
-    print_df = new_df[['agent', 'task_per_agent', 'task_num',
-                       'task_success', 'ratio', 'reserve_a', 'reserve_b', 'time_ms']] \
+    print_df = new_df[['agent', 'task_per_agent', 'task_num', 'phi', 'recalc',
+                       'task_success', 'ratio', 'time_ms']] \
         .sort_values(['agent', 'task_per_agent'])
     print(print_df)
 
@@ -153,13 +160,13 @@ def plot_tasks_vs_success(df, size, phi, k):
 
     ratio_str = '%s & $%d \\times M$ & %s \\\\ \\hline' % (phi, k, ' & '.join(ratios))
     time_str = '%s & $%d \\times M$ & %s \\\\ \\hline' % (phi, k, ' & '.join(times))
-    return ratio_str, time_str
+    return ratio_str, time_str, print_df
 
 
 def plot_branch_and_bound(df, size, phi):
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['time_ms'] >= 0) & \
            (df['mlabel'] == True) & (df['reserve_all'] == False) & \
-           (df['scheduler'] == 'flex') & (df['window'] == 0) & (df['recalc'] == True)
+           (df['scheduler'] == 'flex') & (df['window'] == 0) & (df['recalc'] == True) & (df['retry'] == True)
     new_df = df[cond].copy()
     if len(new_df) == 0:
         return []
@@ -207,7 +214,8 @@ def plot_branch_and_bound(df, size, phi):
 def plot_dummy_path(df, size, phi):
     cond = (df['size'] == size) & (df['phi'] == phi) & (df['time_ms'] >= 0) & \
            (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & (df['recalc'] == True) & \
-           (df['scheduler'] == 'flex') & (df['window'] == 0) & (df['skip'] == True) & (df['task_bound'] == True)
+           (df['scheduler'] == 'flex') & (df['window'] == 0) & (df['skip'] == True) & (df['task_bound'] == True) & \
+           (df['retry'] == True) & (df['nearest'] == False) & (df['ec'] == False)
     new_df = df[cond].copy()
     # parse_dummy_path(new_df)
     map_size = parse_map_size(new_df)
@@ -284,7 +292,7 @@ def plot_recalculate(df, size, phi):
     new_df = new_df.groupby(['agent', 'task_per_agent'], as_index=False).mean()
 
     print_df = new_df[['agent', 'task_per_agent', 'task_num_on', 'task_success_on', 'task_success_off',
-                      'time_ms_on', 'time_ms_off', 'success_ratio']] \
+                       'time_ms_on', 'time_ms_off', 'success_ratio']] \
         .sort_values(['agent', 'task_per_agent'])
     print(print_df)
 
@@ -314,7 +322,6 @@ def plot_nearest_ec(df, size, phi):
     print(new_df)
 
 
-
 def calculate_average(df, reserve_all, label):
     cond = (df['bound'] == True) & (df['sort'] == True) & (df['mlabel'] == True) & \
            (df['window'] == 0) & (df['reserve_all'] == reserve_all) & \
@@ -334,6 +341,18 @@ def generate_table(data, size):
                 table.append('\n'.join(row[i]))
         print('\n'.join(table))
         print()
+
+
+def generate_csv(result_dfs, size):
+    dfs = []
+    for map_size, df in result_dfs:
+        if map_size == size:
+            dfs.append(df)
+    new_df = pd.concat(dfs)
+    print(new_df)
+    recalc = bool(new_df['recalc'].unique()[0]) and '-exp' or '-baseline'
+    filename = 'result' + recalc + '-' + size + '.csv'
+    new_df.to_csv(os.path.join(experiment_dir, filename), index_label=False, float_format="%.5f")
 
 
 def main():
@@ -361,29 +380,34 @@ def main():
 
     pairs = all_df.groupby(['size', 'phi']).first()
     data = []
+    result_dfs = []
     for index, row in pairs.iterrows():
         size, phi = index
         if phi >= 0:
             ratios = []
             times = []
             for k in [10]:
-                ratio, time = plot_tasks_vs_success(all_df, size, phi, k)
+                ratio, time, result_df = plot_tasks_vs_success(all_df, size, phi, k)
                 ratios.append(ratio)
                 times.append(time)
                 data.append((_parse_map_size(size), phi, ratios, times))
+                result_dfs.append((_parse_map_size(size), result_df))
     #
+    # print(data)
     generate_table(data, 'S')
     generate_table(data, 'L')
+    generate_csv(result_dfs, 'S')
+    generate_csv(result_dfs, 'L')
 
-    pairs = all_df.groupby(['size', 'phi']).first()
-    data = []
-    for index, row in pairs.iterrows():
-        size, phi = index
-        if phi >= 0:
-            ratios, reserve_ratios = plot_dummy_path(all_df, size, phi)
-            data.append((_parse_map_size(size), phi, ratios, reserve_ratios))
-    generate_table(data, 'S')
-    generate_table(data, 'L')
+    # pairs = all_df.groupby(['size', 'phi']).first()
+    # data = []
+    # for index, row in pairs.iterrows():
+    #     size, phi = index
+    #     if phi >= 0:
+    #         ratios, reserve_ratios = plot_dummy_path(all_df, size, phi)
+    #         data.append((_parse_map_size(size), phi, ratios, reserve_ratios))
+    # generate_table(data, 'S')
+    # generate_table(data, 'L')
 
     # pairs = all_df.groupby(['size', 'phi']).first()
     # data = []
@@ -396,15 +420,14 @@ def main():
     # generate_table(data, 'S')
     # generate_table(data, 'L')
 
-    pairs = all_df.groupby(['size', 'phi']).first()
-    data = []
-    for index, row in pairs.iterrows():
-        size, phi = index
-        if phi >= 0:
-            ratios = plot_branch_and_bound(all_df, size, phi)
-            data.append((_parse_map_size(size), phi, ratios))
-    generate_table(data, 'S')
-
+    # pairs = all_df.groupby(['size', 'phi']).first()
+    # data = []
+    # for index, row in pairs.iterrows():
+    #     size, phi = index
+    #     if phi >= 0:
+    #         ratios = plot_branch_and_bound(all_df, size, phi)
+    #         data.append((_parse_map_size(size), phi, ratios))
+    # generate_table(data, 'S')
 
     # print(pair)
     # agent = pair[['agent']]
@@ -417,7 +440,6 @@ def main():
     #     size, phi = index
     #     if phi >= 0:
     #         plot_nearest_ec(all_df, size, phi)
-
 
 
 if __name__ == '__main__':

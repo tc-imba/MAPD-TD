@@ -25,6 +25,7 @@ def parse(filename):
     recalc = str("recalc" in args)
     nearest = str("nearest" in args)
     ec = str("ec" in args)
+    retry = str("retry" in args)
     # try:
     #     ec_index = args.index("ec")
     #     ec = int(args[ec_index + 1])
@@ -58,7 +59,7 @@ def parse(filename):
 
     success_rate = task_success / task_num
     # print(task_success, task_num, time_ms)
-    return [size, agent, agent_per_task, seed, phi, scheduler, window, bound, sort, mlabel, skip, recalc, nearest, str(ec),
+    return [size, agent, agent_per_task, seed, phi, scheduler, window, bound, sort, mlabel, skip, recalc, nearest, str(ec), str(retry),
             task_bound, reserve_all, str(task_num), str(task_success), str(success_rate), str(reserve), str(reserve_a),
             str(reserve_b), str(reserve_c), str(time_ms)]
 
@@ -83,7 +84,7 @@ def plot(phi, data):
 
 def main():
     header = ["size", "agent", "task_per_agent", "seed", "phi", "scheduler", "window", "bound", "sort",
-              "mlabel", "skip", "recalc", "nearest", "ec",
+              "mlabel", "skip", "recalc", "nearest", "ec", "retry",
               "task_bound", "reserve_all", "task_num", "task_success", "success_rate",
               "reserve", "reserve_a", "reserve_b", "reserve_c", "time_ms"]
 
@@ -102,7 +103,7 @@ def main():
         # print(row)
         if float(row[-1]) < 0:
             continue
-        row_signature = ','.join(row[:3] + row[4:17])
+        row_signature = ','.join(row[:3] + row[4:18])
         row_data = row[-6:]
         if row_signature not in data:
             data[row_signature] = []

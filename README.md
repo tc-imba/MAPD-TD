@@ -2,7 +2,7 @@
 
 ## Build and Execution
 
-### Docker
+### Docker (Deprecated)
 
 ```bash
 docker build -t mapf .
@@ -13,14 +13,42 @@ docker exec -it mapf MAPF -d /root/MAPF/test-benchmark
 
 ### Local Environment
 
+#### Build
+
 ```bash
 # install cmake boost qt5
 mkdir build
 cmake ..
 make
-./MAPF     # cli version
-./MAPF-ui  # gui version
 ```
+
+#### Generate Tests
+
+Make sure you have build all binaries first, then
+
+```bash
+python3 experiment/generate.py
+```
+
+Thsi will generate all tasks and maps in the `test-benchmark` directory
+
+#### Run Tests
+
+First modify the arguments used in `experiment/test.py`, then run it
+
+```bash
+python3 experiment/test.py
+```
+
+#### Analyze Results
+
+```bash
+python3 experiment/analysis.py
+python3 experiment/result.py
+```
+
+If you add new flags, these two files should also be updated.
+
 
 ## Usage
 
